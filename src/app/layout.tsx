@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Space_Grotesk } from "next/font/google";
+import { Fredoka, Geist } from "next/font/google";
 
-import { SiteFooter } from "@/components/site-footer";
+import { SiteFooterSlot } from "@/components/site-footer-slot";
 import { SiteHeader } from "@/components/site-header";
 
 import "./globals.css";
@@ -11,10 +11,12 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+// Headings only. Fredoka is the closest open-licence match to the rounded,
+// geometric lettering in the team logo. It is a variable font, so no weight
+// list is needed - the whole range comes down in one file.
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -34,12 +36,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${spaceGrotesk.variable} h-full`}
+      className={`${geistSans.variable} ${fredoka.variable} h-full`}
     >
       <body className="flex min-h-full flex-col antialiased">
         <SiteHeader />
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <SiteFooterSlot />
       </body>
     </html>
   );

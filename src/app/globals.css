@@ -29,7 +29,7 @@
   --color-warn: #ffc857;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-space-grotesk), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --font-display: var(--font-fredoka), var(--font-geist-sans), ui-sans-serif, sans-serif;
 }
 
 @layer base {

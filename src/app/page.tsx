@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { CinematicFooter } from "@/components/cinematic-footer";
 import { EventCard } from "@/components/event-card";
 import {
   ArrowRightIcon,
@@ -336,31 +337,9 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------------- cta -- */}
-      {!signedIn ? (
-        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
-          <div className="card relative overflow-hidden p-8 text-center sm:p-16">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -top-40 left-1/2 size-[520px] -translate-x-1/2 rounded-full bg-brand/25 blur-[110px]"
-            />
-            <div className="relative flex flex-col items-center">
-              <SphereTrail />
-              <h2 className="mt-7 text-2xl font-semibold sm:text-4xl">
-                Put your team on the hub
-              </h2>
-              <p className="mt-4 max-w-lg text-fg-muted">
-                It takes a minute: your team number, a name and a password your
-                team shares.
-              </p>
-              <Link href="/signup" className="btn btn-primary mt-8">
-                Register your team
-                <ArrowRightIcon className="size-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : null}
+      {/* The cinematic footer carries the closing call to action, so the home
+          page skips the plain one in the layout - see SiteFooterSlot. */}
+      <CinematicFooter />
     </div>
   );
 }
