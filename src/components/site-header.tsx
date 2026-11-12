@@ -3,7 +3,7 @@ import Link from "next/link";
 import { signOutAction } from "@/lib/actions/auth";
 import { getCurrentTeam } from "@/lib/auth";
 
-import { LogOutIcon, PlusIcon } from "./icons";
+import { LogOutIcon, LogoMark, PlusIcon } from "./icons";
 import { NavLink } from "./nav-link";
 import { TeamAvatar } from "./team-avatar";
 
@@ -19,18 +19,10 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        {/* The cradle lockup already carries the wordmark, so only "hub" is
-            set next to it. The wordmark sits along the bottom of the image,
-            so the row is aligned to the bottom rather than centred - that is
-            what puts "hub" on the same line as "momentum". */}
-        <Link href="/" className="flex shrink-0 items-end gap-2">
-          <img
-            src="/logo-cradle.png"
-            alt="Momentum"
-            className="h-9 w-auto object-contain"
-          />
-          <span className="font-display pb-px text-base leading-none font-semibold tracking-tight text-brand-mid">
-            hub
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+          <LogoMark className="h-11 w-auto" />
+          <span className="font-display text-base font-semibold tracking-tight">
+            MOMENTUM<span className="text-brand-mid"> hub</span>
           </span>
         </Link>
 
