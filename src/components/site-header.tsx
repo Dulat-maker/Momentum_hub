@@ -20,7 +20,7 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <LogoMark className="size-8" />
+          <LogoMark compact className="size-9" />
           <span className="font-display text-base font-semibold tracking-tight">
             MOMENTUM<span className="text-brand-mid"> hub</span>
           </span>

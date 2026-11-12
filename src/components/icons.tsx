@@ -211,23 +211,23 @@ export function TrophyIcon(props: IconProps) {
 }
 
 /**
- * The team mark from the logo: a comet head with motion trails, followed by
- * spheres fading from deep violet to white. Drawn as vectors so it stays sharp
- * at favicon size; the full lockup lives in public/logo-lockup.png.
+ * The team's own mark, with the studio background keyed out to transparency.
+ * The full lockup with the wordmark lives in public/logo-lockup.png.
  */
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({
+  className,
+  compact,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
   return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
-      <g fill="#6a0fd8">
-        <rect x="5" y="7" width="17" height="4.4" rx="2.2" />
-        <rect x="1" y="15" width="21" height="4.4" rx="2.2" />
-        <rect x="7" y="23" width="15" height="4.4" rx="2.2" />
-      </g>
-      <circle cx="31" cy="17" r="12.5" fill="#6a0fd8" />
-      <circle cx="17.5" cy="32" r="9.5" fill="#8a46e4" />
-      <circle cx="8.5" cy="40" r="6.4" fill="#a67dda" />
-      <circle cx="3.6" cy="45.2" r="3.4" fill="#cbaef1" />
-    </svg>
+    <img
+      src={compact ? "/logo-mark-square.png" : "/logo-mark.png"}
+      alt=""
+      aria-hidden="true"
+      className={`${className ?? ""} object-contain`}
+    />
   );
 }
 

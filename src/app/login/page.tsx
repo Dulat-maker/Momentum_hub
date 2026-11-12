@@ -30,7 +30,7 @@ export default async function LoginPage({
   return (
     <div className="mx-auto w-full max-w-md px-4 py-16 sm:px-6">
       <div className="mb-8 text-center">
-        <LogoMark className="mx-auto size-11" />
+        <LogoMark className="mx-auto h-16 w-auto" />
         <h1 className="mt-4 text-2xl font-semibold">Welcome back</h1>
         <p className="mt-1.5 text-sm text-fg-muted">
           Log in with your team account.

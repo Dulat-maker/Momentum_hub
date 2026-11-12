@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-start md:justify-between">
         <div className="max-w-sm">
           <div className="flex items-center gap-2.5">
-            <LogoMark className="size-7" />
+            <LogoMark compact className="size-8" />
             <span className="font-display text-sm font-semibold">
               MOMENTUM<span className="text-brand-mid"> hub</span>
             </span>
@@ -52,7 +52,8 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line px-4 py-5 text-center text-xs text-fg-dim sm:px-6">
-        Built by Momentum, an FTC team, for the teams around us.
+        Built by Momentum, an FTC team, for the teams around us. An independent
+        project, not an official FIRST site.
       </div>
     </footer>
   );

@@ -176,4 +176,5 @@ npm run lint    # eslint
 
 ---
 
-Built by Momentum, an FTC team, for the teams around us.
+Built by Momentum, an FTC team, for the teams around us. An independent
+project, not an official FIRST site.
