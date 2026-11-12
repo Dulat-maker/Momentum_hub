@@ -154,14 +154,26 @@ export default async function HomePage() {
         />
 
         <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24 sm:pb-28">
-          <Image
-            src="/logo-lockup.png"
-            alt="Momentum"
-            width={360}
-            height={202}
-            priority
-            className="logo-blend h-auto w-72 sm:w-88"
-          />
+          {/* The team number is pinned under the MOMENTUM wordmark rather
+              than under the whole image: the wordmark occupies 36.1%-91.4%
+              of the image width and ends at 66.8% of its height, measured
+              from the artwork itself. */}
+          <div className="relative w-72 sm:w-88">
+            <Image
+              src="/logo-lockup.png"
+              alt="Momentum"
+              width={360}
+              height={202}
+              priority
+              className="logo-blend h-auto w-full"
+            />
+            <span
+              className="font-display absolute block pl-[0.15em] text-center text-sm font-semibold tracking-[0.3em] text-brand-soft sm:text-base"
+              style={{ left: "36.11%", width: "55.28%", top: "71%" }}
+            >
+              #38157
+            </span>
+          </div>
 
           <h1 className="mt-6 text-4xl leading-[1.06] font-semibold sm:text-5xl md:text-6xl">
             The home base for
