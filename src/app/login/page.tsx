@@ -1,0 +1,66 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { ErrorAlert, InfoNote } from "@/components/alert";
+import { LogoMark } from "@/components/icons";
+import { SetupNotice } from "@/components/setup-notice";
+import { safeInternalPath } from "@/lib/action-state";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+
+import { LoginForm } from "./login-form";
+
+export const metadata: Metadata = { title: "Log in" };
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const next = safeInternalPath(params.next, "/dashboard");
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="px-4 py-16 sm:px-6">
+        <SetupNotice />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-md px-4 py-16 sm:px-6">
+      <div className="mb-8 text-center">
+        <LogoMark className="mx-auto size-11" />
+        <h1 className="mt-4 text-2xl font-semibold">Welcome back</h1>
+        <p className="mt-1.5 text-sm text-fg-muted">
+          Log in with your team account.
+        </p>
+      </div>
+
+      <div className="card space-y-4 p-6 sm:p-7">
+        {params.pending ? (
+          <InfoNote>
+            Almost there - check your inbox and click the confirmation link, then
+            log in here.
+          </InfoNote>
+        ) : null}
+
+        {params.error === "link" ? (
+          <ErrorAlert message="That confirmation link is expired or already used. Try logging in, or register again." />
+        ) : null}
+
+        <LoginForm next={next} />
+      </div>
+
+      <p className="mt-6 text-center text-sm text-fg-muted">
+        No account for your team yet?{" "}
+        <Link
+          href="/signup"
+          className="text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand"
+        >
+          Register your team
+        </Link>
+      </p>
+    </div>
+  );
+}
