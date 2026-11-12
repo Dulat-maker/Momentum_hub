@@ -27,9 +27,9 @@ export async function SiteHeader() {
           <img
             src="/logo-cradle.png"
             alt="Momentum"
-            className="h-12 w-auto object-contain"
+            className="h-9 w-auto object-contain"
           />
-          <span className="font-display pb-px text-xl leading-none font-semibold tracking-tight text-brand-mid">
+          <span className="font-display pb-px text-base leading-none font-semibold tracking-tight text-brand-mid">
             hub
           </span>
         </Link>
