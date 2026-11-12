@@ -176,4 +176,4 @@ npm run lint    # eslint
 
 ---
 
-Not affiliated with FIRST. Built by an FTC team for the teams around them.
+Built by Momentum, an FTC team, for the teams around us.

@@ -52,7 +52,7 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line px-4 py-5 text-center text-xs text-fg-dim sm:px-6">
-        Built by an FTC team, for FTC teams. Not affiliated with FIRST.
+        Built by Momentum, an FTC team, for the teams around us.
       </div>
     </footer>
   );
