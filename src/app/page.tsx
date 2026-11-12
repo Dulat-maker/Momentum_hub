@@ -120,6 +120,25 @@ export default async function HomePage() {
 
   return (
     <div>
+      {/* ---------------------------------------------------------- intro -- */}
+      {/* A screen of its own that only points downwards, the way the
+          reference page opens. 4rem is the header, so it fills exactly what
+          is left of the viewport. */}
+      <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden px-4 sm:px-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 left-1/2 size-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/12 blur-[130px]"
+        />
+
+        <p className="relative text-center text-sm font-light tracking-[0.3em] text-fg-dim uppercase sm:text-base">
+          Scroll down to reveal
+        </p>
+        <div
+          aria-hidden="true"
+          className="relative mt-8 h-28 w-px bg-gradient-to-b from-fg-dim to-transparent"
+        />
+      </section>
+
       {/* ----------------------------------------------------------- hero -- */}
       <section className="relative overflow-hidden">
         <div
@@ -131,10 +150,7 @@ export default async function HomePage() {
           className="pointer-events-none absolute top-40 -left-52 size-[420px] rounded-full bg-brand-deep/30 blur-[130px]"
         />
 
-        {/* A full first screen, the way the reference page opens: everything
-            centred, and the cue to scroll sitting on the fold. 4rem is the
-            header, so this fills exactly what is left of the viewport. */}
-        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24 sm:pb-28">
           {/* The team number is pinned under the MOMENTUM wordmark rather
               than under the whole image: the wordmark occupies 36.1%-91.4%
               of the image width and ends at 66.8% of its height, measured
@@ -183,13 +199,6 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <p className="mt-14 text-center text-xs font-light tracking-[0.3em] text-fg-dim uppercase sm:text-sm">
-            Scroll down to reveal
-          </p>
-          <div
-            aria-hidden="true"
-            className="mt-5 h-16 w-px bg-gradient-to-b from-fg-dim to-transparent"
-          />
         </div>
       </section>
 
