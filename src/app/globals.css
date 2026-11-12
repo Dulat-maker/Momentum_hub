@@ -44,6 +44,42 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /*
+   * The grid and violet bloom that sit behind the whole site - the same
+   * treatment the footer uses, lifted out so every page shares it. Fixed and
+   * painted behind the content, so it stays put while the page scrolls and
+   * never intercepts clicks.
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--color-canvas);
+    background-image:
+      radial-gradient(
+        circle at 50% 38%,
+        color-mix(in oklch, var(--color-brand) 20%, transparent) 0%,
+        color-mix(in oklch, var(--color-brand-deep) 10%, transparent) 38%,
+        transparent 68%
+      ),
+      linear-gradient(
+        to right,
+        color-mix(in oklch, var(--color-fg) 4%, transparent) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        color-mix(in oklch, var(--color-fg) 4%, transparent) 1px,
+        transparent 1px
+      );
+    background-size:
+      100% 100%,
+      64px 64px,
+      64px 64px;
+  }
+
   h1,
   h2,
   h3,

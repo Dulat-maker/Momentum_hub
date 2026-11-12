@@ -125,17 +125,21 @@ export default async function HomePage() {
           reference page opens. 4rem is the header, so it fills exactly what
           is left of the viewport. */}
       <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden px-4 sm:px-6">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 size-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/12 blur-[130px]"
-        />
+        {/* Not an <h1>: the hero below holds the page's real heading, and two
+            of them would leave screen readers with competing titles. */}
+        <p className="font-display max-w-3xl text-center text-3xl leading-tight font-semibold tracking-tight sm:text-5xl">
+          Stay in motion.{" "}
+          <span className="bg-gradient-to-r from-brand-soft via-brand-mid to-brand bg-clip-text text-transparent">
+            Stay in momentum
+          </span>
+        </p>
 
-        <p className="relative text-center text-sm font-light tracking-[0.3em] text-fg-dim uppercase sm:text-base">
+        <p className="mt-10 text-center text-xs font-light tracking-[0.3em] text-fg-dim uppercase sm:text-sm">
           Scroll down to reveal
         </p>
         <div
           aria-hidden="true"
-          className="relative mt-8 h-28 w-px bg-gradient-to-b from-fg-dim to-transparent"
+          className="mt-6 h-24 w-px bg-gradient-to-b from-fg-dim to-transparent"
         />
       </section>
 
