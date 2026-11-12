@@ -41,8 +41,9 @@ npm install
 2. Open **SQL Editor**, paste the whole of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**.
    It creates the tables, indexes, the sign-up trigger and all RLS policies, and
    it is safe to run again later.
-3. Go to **Project Settings → API** and copy the **Project URL** and the
-   **anon public** key.
+3. Press **Connect** at the top of the dashboard → **Framework** → **Next.js**,
+   and copy the values from the `.env.local` tab. (The same values live under
+   **Project Settings → API Keys**.)
 
 ### 3. Add the keys
 
@@ -50,11 +51,18 @@ Put them in `.env.local` (the file is already there, just fill it in):
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
-Only the anon key belongs here. Never commit a service-role key, and never put
-one in a `NEXT_PUBLIC_*` variable — it would be shipped to the browser.
+Supabase renamed this key. Newer projects hand out `sb_publishable_...` as
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; older ones hand out an `anon public`
+JWT as `NEXT_PUBLIC_SUPABASE_ANON_KEY`. **Either name works** — the app checks
+for both, so paste whichever your project gives you.
+
+Only the publishable/anon key belongs here. Never commit a service-role or
+`sb_secret_...` key, and never put one in a `NEXT_PUBLIC_*` variable — those are
+shipped to the browser. The public key is safe there: access is controlled by
+the RLS policies in `schema.sql`, not by keeping the key hidden.
 
 ### 4. Run it
 
@@ -82,10 +90,23 @@ in the email lands back on the site.
 The project runs on any Node host; Vercel is the least work:
 
 1. Push the repo to GitHub.
-2. Import it at [vercel.com/new](https://vercel.com/new).
-3. Add the same two environment variables in the Vercel project settings.
-4. In Supabase, set **Authentication → URL Configuration → Site URL** to the
-   deployed URL and add `https://your-site/auth/callback` to the redirect URLs.
+2. Import it at [vercel.com/new](https://vercel.com/new). Next.js is detected
+   automatically — leave the build settings alone.
+3. **Before the first deploy**, add the two environment variables from
+   `.env.local` under *Environment Variables*, for all environments.
+   `NEXT_PUBLIC_*` values are baked into the bundle at build time, so adding
+   them later means triggering a fresh deploy (Deployments → ⋯ → Redeploy).
+4. In Supabase, open **Authentication → URL Configuration**: set **Site URL**
+   to the deployed address and add `https://your-site/auth/callback` under
+   **Redirect URLs**. Without this, confirmation links in sign-up emails point
+   back at localhost.
+5. Turn **Confirm email** back on if you switched it off while testing, so
+   nobody can claim another team's number with an address they do not own.
+
+The built-in Supabase mailer is rate limited to a handful of messages per hour
+and is meant for development. Before real teams start signing up, connect your
+own SMTP under **Authentication → Emails** (Resend and Brevo both have free
+tiers).
 
 ---
 
