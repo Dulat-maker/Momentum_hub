@@ -214,16 +214,10 @@ export function TrophyIcon(props: IconProps) {
  * The team's own mark, with the studio background keyed out to transparency.
  * The full lockup with the wordmark lives in public/logo-lockup.png.
  */
-export function LogoMark({
-  className,
-  compact,
-}: {
-  className?: string;
-  compact?: boolean;
-}) {
+export function LogoMark({ className }: { className?: string }) {
   return (
     <img
-      src={compact ? "/logo-mark-square.png" : "/logo-mark.png"}
+      src="/logo-mark.png"
       alt=""
       aria-hidden="true"
       className={`${className ?? ""} object-contain`}

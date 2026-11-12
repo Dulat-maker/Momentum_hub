@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-start md:justify-between">
         <div className="max-w-sm">
           <div className="flex items-center gap-2.5">
-            <LogoMark compact className="size-8" />
+            <LogoMark className="h-10 w-auto" />
             <span className="font-display text-sm font-semibold">
               MOMENTUM<span className="text-brand-mid"> hub</span>
             </span>
