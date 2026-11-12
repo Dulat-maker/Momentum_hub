@@ -22,7 +22,7 @@ export async function SiteHeader() {
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <LogoMark className="size-8" />
           <span className="font-display text-base font-semibold tracking-tight">
-            Momentum<span className="text-brand">Hub</span>
+            MOMENTUM<span className="text-brand-mid"> hub</span>
           </span>
         </Link>
 

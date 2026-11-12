@@ -32,7 +32,7 @@ export function EventCard({
         className={`flex size-14 shrink-0 flex-col items-center justify-center rounded-xl border ${
           past
             ? "border-line bg-panel-2 text-fg-dim"
-            : "border-brand/30 bg-brand/10 text-brand"
+            : "border-brand/30 bg-brand/10 text-brand-mid"
         }`}
       >
         <span className="text-[10px] font-semibold tracking-wider">

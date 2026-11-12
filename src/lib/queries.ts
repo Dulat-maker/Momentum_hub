@@ -17,7 +17,7 @@ export const EVENT_CARD_SELECT = [
   "capacity",
   "cost",
   "created_at",
-  "team:teams(id, team_number, name, city, logo_url)",
+  "team:teams!events_team_id_fkey(id, team_number, name, city, logo_url)",
   "likes:event_likes(count)",
   "feedback:event_feedback(count)",
 ].join(", ");
@@ -29,7 +29,7 @@ export const POST_CARD_SELECT = [
   "body",
   "category",
   "created_at",
-  "team:teams(id, team_number, name, city, logo_url)",
+  "team:teams!posts_team_id_fkey(id, team_number, name, city, logo_url)",
   "likes:post_likes(count)",
   "comments:post_comments(count)",
 ].join(", ");

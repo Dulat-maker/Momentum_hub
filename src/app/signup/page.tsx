@@ -61,7 +61,7 @@ export default function SignupPage() {
         <ul className="mt-9 space-y-6">
           {PERKS.map((perk) => (
             <li key={perk.title} className="flex gap-4">
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-panel text-brand">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-line bg-panel text-brand-mid">
                 <perk.icon className="size-5" />
               </span>
               <div>
@@ -86,7 +86,7 @@ export default function SignupPage() {
           Your team is already registered?{" "}
           <Link
             href="/login"
-            className="text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand"
+            className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4 hover:decoration-brand-mid"
           >
             Log in
           </Link>

@@ -56,7 +56,7 @@ export default async function TeamsPage({
   let query = supabase
     .from("teams")
     .select(
-      "id, team_number, name, city, country, logo_url, about, rookie_year, events(count), members:team_members(count)",
+      "id, team_number, name, city, country, logo_url, about, rookie_year, events!events_team_id_fkey(count), members:team_members(count)",
     )
     .order("team_number", { ascending: true });
 

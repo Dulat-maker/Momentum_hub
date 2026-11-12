@@ -136,7 +136,7 @@ export default async function TeamProfilePage({
 
           <div className="min-w-0 flex-1">
             <p className="font-display text-3xl font-semibold">
-              <span className="text-brand">#</span>
+              <span className="text-brand-mid">#</span>
               {team.team_number}
             </p>
             <h1 className="mt-1 text-2xl font-semibold">{team.name}</h1>
@@ -306,7 +306,7 @@ export default async function TeamProfilePage({
                 className="card card-link p-4"
               >
                 <div className="flex items-center gap-2 text-xs text-fg-dim">
-                  <span className="chip border-accent/25 text-accent">
+                  <span className="chip border-brand-mid/25 text-brand-soft">
                     {CATEGORY_LABELS[post.category]}
                   </span>
                   <span>{timeAgo(post.created_at)}</span>

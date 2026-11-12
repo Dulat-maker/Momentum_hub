@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-4 py-28 text-center sm:px-6">
-      <p className="font-display text-5xl font-semibold text-brand">404</p>
+      <p className="font-display text-5xl font-semibold text-brand-mid">404</p>
       <h1 className="mt-4 text-2xl font-semibold">Nothing here</h1>
       <p className="mt-2 text-sm text-fg-muted">
         That page, event or team does not exist - or it was deleted by the team

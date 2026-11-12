@@ -1,18 +1,31 @@
 @import "tailwindcss";
 
+/*
+ * Palette sampled straight from the team logo:
+ *   #5E00D4  deep violet   - the comet head
+ *   #7421DC  violet        - the second sphere
+ *   #A67DDA  lilac         - the third sphere
+ *   #CBAEF1  pale lilac    - the fourth sphere
+ *   #FFFFFF  white         - the wordmark and the spark
+ * on pure black, exactly like the logo background.
+ */
 @theme {
-  --color-canvas: #07080c;
-  --color-panel: #0d0f15;
-  --color-panel-2: #141821;
-  --color-line: #222736;
-  --color-fg: #edf0f6;
-  --color-fg-muted: #99a2b5;
-  --color-fg-dim: #6d7689;
-  --color-brand: #ff6a2c;
-  --color-brand-dim: #b8491c;
-  --color-brand-soft: #ffb495;
-  --color-accent: #4cc9f0;
-  --color-success: #39d98a;
+  --color-canvas: #000000;
+  --color-panel: #0a0612;
+  --color-panel-2: #130b23;
+  --color-line: #241a3a;
+  --color-line-soft: #180f2a;
+
+  --color-fg: #f4f1fa;
+  --color-fg-muted: #a79dbe;
+  --color-fg-dim: #6f6589;
+
+  --color-brand: #7421dc;
+  --color-brand-deep: #5e00d4;
+  --color-brand-mid: #a67dda;
+  --color-brand-soft: #cbaef1;
+
+  --color-success: #4ad991;
   --color-warn: #ffc857;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -51,7 +64,7 @@
   }
 
   .card-link {
-    @apply transition-colors hover:border-brand/40 hover:bg-panel-2;
+    @apply transition-colors hover:border-brand-mid/40 hover:bg-panel-2;
   }
 
   .btn {
@@ -59,11 +72,11 @@
   }
 
   .btn-primary {
-    @apply bg-brand text-white hover:bg-brand-dim;
+    @apply bg-brand text-white hover:bg-brand-deep;
   }
 
   .btn-outline {
-    @apply border border-line bg-panel text-fg hover:border-fg-dim hover:bg-panel-2;
+    @apply border border-line bg-panel text-fg hover:border-brand-mid/50 hover:bg-panel-2;
   }
 
   .btn-ghost {
@@ -83,11 +96,15 @@
   }
 
   .input {
-    @apply w-full rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-sm text-fg transition-colors placeholder:text-fg-dim focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none;
+    @apply w-full rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-sm text-fg transition-colors placeholder:text-fg-dim focus:border-brand-mid focus:ring-2 focus:ring-brand/30 focus:outline-none;
   }
 
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-fg-muted;
+  }
+
+  .chip-active {
+    @apply border-brand-mid/50 bg-brand/20 text-brand-soft;
   }
 
   .section-title {
@@ -95,6 +112,11 @@
   }
 
   .eyebrow {
-    @apply text-xs font-semibold tracking-[0.18em] text-brand uppercase;
+    @apply text-xs font-semibold tracking-[0.18em] text-brand-mid uppercase;
+  }
+
+  /* The logo PNG ships on a black background; screen blending drops it. */
+  .logo-blend {
+    mix-blend-mode: screen;
   }
 }

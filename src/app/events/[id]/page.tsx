@@ -57,7 +57,7 @@ const DETAIL_SELECT = [
   "capacity",
   "cost",
   "created_at",
-  "team:teams(id, team_number, name, city, country, logo_url, about, website, instagram, contact_email)",
+  "team:teams!events_team_id_fkey(id, team_number, name, city, country, logo_url, about, website, instagram, contact_email)",
   "likes:event_likes(count)",
 ].join(", ");
 
@@ -381,7 +381,7 @@ export default async function EventPage({
                 <p className="text-sm text-fg-muted">
                   <Link
                     href={`/login?next=/events/${event.id}`}
-                    className="text-brand underline decoration-brand/40 underline-offset-4"
+                    className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4"
                   >
                     Log in with your team account
                   </Link>{" "}

@@ -7,7 +7,7 @@ import { AlertIcon } from "./icons";
 export function SetupNotice() {
   return (
     <div className="card mx-auto max-w-2xl p-6 sm:p-8">
-      <p className="flex items-center gap-2 text-brand">
+      <p className="flex items-center gap-2 text-brand-mid">
         <AlertIcon className="size-5" />
         <span className="eyebrow">One step left</span>
       </p>
@@ -20,7 +20,7 @@ export function SetupNotice() {
 
       <ol className="mt-5 space-y-4 text-sm">
         <li className="flex gap-3">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-panel-2 text-xs font-semibold text-brand">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-panel-2 text-xs font-semibold text-brand-mid">
             1
           </span>
           <span className="text-fg-muted">
@@ -29,7 +29,7 @@ export function SetupNotice() {
               href="https://supabase.com/dashboard"
               target="_blank"
               rel="noreferrer"
-              className="text-fg underline decoration-line underline-offset-4 hover:decoration-brand"
+              className="text-fg underline decoration-line underline-offset-4 hover:decoration-brand-mid"
             >
               supabase.com/dashboard
             </a>
@@ -37,7 +37,7 @@ export function SetupNotice() {
           </span>
         </li>
         <li className="flex gap-3">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-panel-2 text-xs font-semibold text-brand">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-panel-2 text-xs font-semibold text-brand-mid">
             2
           </span>
           <span className="text-fg-muted">
@@ -49,7 +49,7 @@ export function SetupNotice() {
           </span>
         </li>
         <li className="flex gap-3">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-panel-2 text-xs font-semibold text-brand">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-panel-2 text-xs font-semibold text-brand-mid">
             3
           </span>
           <span className="text-fg-muted">

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { EventCard } from "@/components/event-card";
@@ -8,6 +9,7 @@ import {
   MapPinIcon,
   MessageIcon,
   SparkIcon,
+  SparkMark,
   UsersIcon,
 } from "@/components/icons";
 import { PostCard } from "@/components/post-card";
@@ -24,22 +26,13 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { EventWithTeam, PostWithTeam } from "@/lib/types";
 
-const STEPS = [
-  {
-    icon: UsersIcon,
-    title: "Register your team once",
-    body: "One account per team, keyed to your FTC number. Share the login with whoever runs your outreach.",
-  },
-  {
-    icon: CalendarIcon,
-    title: "Put your events on the map",
-    body: "Scrimmage, workshop, outreach day, build party - add it and every team in the country sees it.",
-  },
-  {
-    icon: MessageIcon,
-    title: "Stop working in isolation",
-    body: "Ask the question your team is stuck on, leave feedback on events you attended, find alliance partners.",
-  },
+/** The sphere cascade from the logo, reused as a divider. */
+const SPHERES = [
+  { color: "#5e00d4", size: "size-5" },
+  { color: "#7421dc", size: "size-4" },
+  { color: "#a67dda", size: "size-3" },
+  { color: "#cbaef1", size: "size-2.5" },
+  { color: "#ffffff", size: "size-1.5" },
 ];
 
 const FEATURES = [
@@ -64,6 +57,20 @@ const FEATURES = [
     body: "Who you are, where you are from, who is on the team and what you have built.",
   },
 ];
+
+function SphereTrail({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center gap-2 ${className}`} aria-hidden="true">
+      {SPHERES.map((sphere) => (
+        <span
+          key={sphere.color}
+          className={`${sphere.size} rounded-full`}
+          style={{ backgroundColor: sphere.color }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default async function HomePage() {
   const configured = isSupabaseConfigured;
@@ -106,34 +113,71 @@ export default async function HomePage() {
     ]);
   }
 
+  const sections = [
+    {
+      href: "/events",
+      icon: CalendarIcon,
+      label: "Events",
+      count: stats.events,
+      countLabel: stats.events === 1 ? "event posted" : "events posted",
+      body: "Scrimmages, workshops and outreach days from every team, filtered by city and format.",
+    },
+    {
+      href: "/teams",
+      icon: UsersIcon,
+      label: "Teams",
+      count: stats.teams,
+      countLabel: stats.teams === 1 ? "team registered" : "teams registered",
+      body: "Who is competing, where they are based and who is on the roster.",
+    },
+    {
+      href: "/community",
+      icon: MessageIcon,
+      label: "Community",
+      count: stats.posts,
+      countLabel: stats.posts === 1 ? "post" : "posts",
+      body: "Ask for help with code or CAD, show what you built, find an alliance partner.",
+    },
+  ];
+
   return (
     <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-line">
+      {/* ----------------------------------------------------------- hero -- */}
+      <section className="relative overflow-hidden">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-40 left-1/2 size-[640px] -translate-x-1/2 rounded-full bg-brand/18 blur-[120px]"
+          className="pointer-events-none absolute -top-72 left-1/2 size-[820px] -translate-x-1/2 rounded-full bg-brand/25 blur-[140px]"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-40 -bottom-56 size-[460px] rounded-full bg-accent/10 blur-[120px]"
+          className="pointer-events-none absolute top-40 -left-52 size-[420px] rounded-full bg-brand-deep/30 blur-[130px]"
         />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
-          <p className="eyebrow">For FTC teams, by an FTC team</p>
+        <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24 sm:pb-28">
+          <Image
+            src="/logo-lockup.png"
+            alt="Momentum"
+            width={406}
+            height={250}
+            priority
+            className="logo-blend h-auto w-64 sm:w-80"
+          />
 
-          <h1 className="mt-4 max-w-3xl text-4xl leading-[1.05] font-semibold sm:text-5xl md:text-6xl">
-            Every team, every event,
-            <span className="text-brand"> one hub</span>.
+          <h1 className="mt-6 text-4xl leading-[1.06] font-semibold sm:text-5xl md:text-6xl">
+            The home base for
+            <br />
+            <span className="bg-gradient-to-r from-brand-soft via-brand-mid to-brand bg-clip-text text-transparent">
+              FTC teams
+            </span>
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg text-fg-muted">
-            Momentum Hub is where FTC teams publish their scrimmages and
-            workshops, find out what is happening in other cities, and talk to
-            each other instead of guessing.
+          <p className="mt-6 max-w-xl text-lg text-fg-muted">
+            One account per team. Publish your events, see what is happening in
+            other cities, and talk to the teams you will be standing next to at
+            the next competition.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center gap-3">
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={signedIn ? "/events/new" : "/signup"}
               className="btn btn-primary"
@@ -146,56 +190,58 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          {configured ? (
-            <dl className="mt-14 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
-              {[
-                { label: "Teams", value: stats.teams },
-                { label: "Events", value: stats.events },
-                { label: "Cities", value: stats.cities },
-                { label: "Posts", value: stats.posts },
-              ].map((stat) => (
-                <div key={stat.label}>
-                  <dd className="font-display text-3xl font-semibold">
-                    {stat.value}
-                  </dd>
-                  <dt className="mt-1 text-xs tracking-wider text-fg-dim uppercase">
-                    {stat.label}
-                  </dt>
-                </div>
-              ))}
-            </dl>
-          ) : null}
+          <SphereTrail className="mt-14" />
         </div>
       </section>
 
       {!configured ? (
-        <section className="px-4 py-16 sm:px-6">
+        <section className="px-4 pb-16 sm:px-6">
           <SetupNotice />
         </section>
       ) : null}
 
-      {/* How it works */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <h2 className="section-title">How it works</h2>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {STEPS.map((step, index) => (
-            <div key={step.title} className="card p-6">
-              <div className="flex items-center justify-between">
-                <span className="grid size-10 place-items-center rounded-xl border border-line bg-panel-2 text-brand">
-                  <step.icon className="size-5" />
+      {/* ------------------------------------------------- the three areas -- */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
+        <div className="grid gap-4 md:grid-cols-3">
+          {sections.map((section) => (
+            <Link
+              key={section.href}
+              href={section.href}
+              className="card card-link group relative overflow-hidden p-6"
+            >
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -top-16 -right-16 size-40 rounded-full bg-brand/20 blur-3xl transition-colors group-hover:bg-brand/35"
+              />
+              <div className="relative">
+                <span className="grid size-11 place-items-center rounded-xl border border-line bg-panel-2 text-brand-mid">
+                  <section.icon className="size-5" />
                 </span>
-                <span className="font-display text-2xl font-semibold text-line">
-                  0{index + 1}
-                </span>
+
+                <h2 className="mt-5 flex items-center gap-2 text-lg font-semibold">
+                  {section.label}
+                  <ArrowRightIcon className="size-4 text-fg-dim transition-transform group-hover:translate-x-1" />
+                </h2>
+
+                <p className="mt-2 text-sm text-fg-muted">{section.body}</p>
+
+                {configured ? (
+                  <p className="mt-5 flex items-baseline gap-2 border-t border-line pt-4">
+                    <span className="font-display text-2xl font-semibold text-brand-soft">
+                      {section.count}
+                    </span>
+                    <span className="text-xs text-fg-dim">
+                      {section.countLabel}
+                    </span>
+                  </p>
+                ) : null}
               </div>
-              <h3 className="mt-5 text-lg font-semibold">{step.title}</h3>
-              <p className="mt-2 text-sm text-fg-muted">{step.body}</p>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* Upcoming events */}
+      {/* ------------------------------------------------- upcoming events -- */}
       {configured && events.length > 0 ? (
         <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -222,14 +268,23 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Features */}
-      <section className="border-y border-line bg-panel/40">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-          <h2 className="section-title">What you get</h2>
+      {/* -------------------------------------------------------- features -- */}
+      <section className="relative overflow-hidden border-y border-line">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-1/2 -right-40 size-[400px] -translate-y-1/2 rounded-full bg-brand-deep/20 blur-[120px]"
+        />
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
+          <div className="flex items-center gap-3">
+            <SparkMark className="size-5 text-brand-soft" />
+            <p className="eyebrow">Why it helps</p>
+          </div>
+          <h2 className="section-title mt-3">What you get</h2>
+
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {FEATURES.map((feature) => (
               <div key={feature.title} className="flex gap-4">
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-panel text-brand">
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-panel text-brand-mid">
                   <feature.icon className="size-5" />
                 </span>
                 <div>
@@ -242,7 +297,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Community preview */}
+      {/* ----------------------------------------------- community preview -- */}
       {configured && posts.length > 0 ? (
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -269,23 +324,24 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Closing CTA */}
+      {/* ------------------------------------------------------------- cta -- */}
       {!signedIn ? (
-        <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-          <div className="card relative overflow-hidden p-8 text-center sm:p-14">
+        <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+          <div className="card relative overflow-hidden p-8 text-center sm:p-16">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -top-32 left-1/2 size-[420px] -translate-x-1/2 rounded-full bg-brand/15 blur-[100px]"
+              className="pointer-events-none absolute -top-40 left-1/2 size-[520px] -translate-x-1/2 rounded-full bg-brand/25 blur-[110px]"
             />
-            <div className="relative">
-              <h2 className="text-2xl font-semibold sm:text-3xl">
+            <div className="relative flex flex-col items-center">
+              <SphereTrail />
+              <h2 className="mt-7 text-2xl font-semibold sm:text-4xl">
                 Put your team on the hub
               </h2>
-              <p className="mx-auto mt-3 max-w-lg text-fg-muted">
+              <p className="mt-4 max-w-lg text-fg-muted">
                 It takes a minute: your team number, a name and a password your
                 team shares.
               </p>
-              <Link href="/signup" className="btn btn-primary mt-7">
+              <Link href="/signup" className="btn btn-primary mt-8">
                 Register your team
                 <ArrowRightIcon className="size-4" />
               </Link>

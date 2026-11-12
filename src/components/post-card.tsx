@@ -35,7 +35,7 @@ export function PostCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 text-xs text-fg-dim">
-            <span className="chip border-accent/25 text-accent">
+            <span className="chip border-brand-mid/25 text-brand-soft">
               {CATEGORY_LABELS[post.category]}
             </span>
             {author ? (

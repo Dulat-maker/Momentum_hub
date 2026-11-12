@@ -99,7 +99,7 @@ export default async function DashboardPage({
           <div>
             <p className="eyebrow">Your team</p>
             <h1 className="mt-1.5 text-2xl font-semibold sm:text-3xl">
-              <span className="text-brand">#</span>
+              <span className="text-brand-mid">#</span>
               {team.team_number} {team.name}
             </h1>
             <p className="mt-1 text-sm text-fg-muted">
@@ -171,7 +171,7 @@ export default async function DashboardPage({
         {events.length === 0 ? (
           <p className="mt-4 text-sm text-fg-dim">
             Nothing posted yet.{" "}
-            <Link href="/events/new" className="text-brand underline underline-offset-4">
+            <Link href="/events/new" className="text-brand-mid underline underline-offset-4">
               Add your first event
             </Link>
             .
@@ -197,7 +197,7 @@ export default async function DashboardPage({
                   <div className="min-w-50 flex-1">
                     <Link
                       href={`/events/${event.id}`}
-                      className="font-medium hover:text-brand"
+                      className="font-medium hover:text-brand-mid"
                     >
                       {event.title}
                     </Link>
@@ -284,7 +284,7 @@ export default async function DashboardPage({
         {posts.length === 0 ? (
           <p className="mt-4 text-sm text-fg-dim">
             Nothing in the community yet.{" "}
-            <Link href="/community" className="text-brand underline underline-offset-4">
+            <Link href="/community" className="text-brand-mid underline underline-offset-4">
               Write something
             </Link>
             .
@@ -296,13 +296,13 @@ export default async function DashboardPage({
                 key={post.id}
                 className="card flex flex-wrap items-center gap-3 p-4"
               >
-                <span className="chip border-accent/25 text-accent">
+                <span className="chip border-brand-mid/25 text-brand-soft">
                   {CATEGORY_LABELS[post.category]}
                 </span>
                 <div className="min-w-50 flex-1">
                   <Link
                     href={`/community/${post.id}`}
-                    className="font-medium hover:text-brand"
+                    className="font-medium hover:text-brand-mid"
                   >
                     {post.title}
                   </Link>

@@ -30,7 +30,7 @@ const POST_DETAIL_SELECT = [
   "body",
   "category",
   "created_at",
-  "team:teams(id, team_number, name, city, logo_url)",
+  "team:teams!posts_team_id_fkey(id, team_number, name, city, logo_url)",
   "likes:post_likes(count)",
   "comments:post_comments(count)",
 ].join(", ");
@@ -130,7 +130,7 @@ export default async function PostPage({
               {author ? (
                 <Link
                   href={`/teams/${author.team_number}`}
-                  className="text-sm font-medium hover:text-brand"
+                  className="text-sm font-medium hover:text-brand-mid"
                 >
                   #{author.team_number} {author.name}
                 </Link>
@@ -154,7 +154,7 @@ export default async function PostPage({
           ) : null}
         </div>
 
-        <span className="chip mt-5 border-accent/25 text-accent">
+        <span className="chip mt-5 border-brand-mid/25 text-brand-soft">
           {CATEGORY_LABELS[post.category]}
         </span>
 
@@ -254,7 +254,7 @@ export default async function PostPage({
             <p className="text-sm text-fg-muted">
               <Link
                 href={`/login?next=/community/${post.id}`}
-                className="text-brand underline decoration-brand/40 underline-offset-4"
+                className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4"
               >
                 Log in with your team account
               </Link>{" "}

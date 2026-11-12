@@ -210,21 +210,35 @@ export function TrophyIcon(props: IconProps) {
   );
 }
 
-/** The Momentum Hub mark: an M leaning forward, like a speed line. */
+/**
+ * The team mark from the logo: a comet head with motion trails, followed by
+ * spheres fading from deep violet to white. Drawn as vectors so it stays sharp
+ * at favicon size; the full lockup lives in public/logo-lockup.png.
+ */
 export function LogoMark({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="var(--color-brand)" />
-      <g transform="translate(16 16) skewX(-9) translate(-16 -16)">
-        <path
-          d="M9 22.5V10.5l7 7.5 7-7.5v12"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="2.7"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <g fill="#6a0fd8">
+        <rect x="5" y="7" width="17" height="4.4" rx="2.2" />
+        <rect x="1" y="15" width="21" height="4.4" rx="2.2" />
+        <rect x="7" y="23" width="15" height="4.4" rx="2.2" />
       </g>
+      <circle cx="31" cy="17" r="12.5" fill="#6a0fd8" />
+      <circle cx="17.5" cy="32" r="9.5" fill="#8a46e4" />
+      <circle cx="8.5" cy="40" r="6.4" fill="#a67dda" />
+      <circle cx="3.6" cy="45.2" r="3.4" fill="#cbaef1" />
+    </svg>
+  );
+}
+
+/** The four-pointed spark that sits between the mark and the wordmark. */
+export function SparkMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M12 1.5c.6 5.4 2.9 8 9 9-6.1 1-8.4 3.6-9 9-.6-5.4-2.9-8-9-9 6.1-1 8.4-3.6 9-9z"
+        fill="currentColor"
+      />
     </svg>
   );
 }

@@ -56,7 +56,7 @@ export default async function LoginPage({
         No account for your team yet?{" "}
         <Link
           href="/signup"
-          className="text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand"
+          className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4 hover:decoration-brand-mid"
         >
           Register your team
         </Link>
