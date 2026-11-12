@@ -157,10 +157,10 @@ export default async function HomePage() {
           <Image
             src="/logo-lockup.png"
             alt="Momentum"
-            width={406}
-            height={250}
+            width={360}
+            height={202}
             priority
-            className="logo-blend h-auto w-64 sm:w-80"
+            className="logo-blend h-auto w-72 sm:w-88"
           />
 
           <h1 className="mt-6 text-4xl leading-[1.06] font-semibold sm:text-5xl md:text-6xl">
