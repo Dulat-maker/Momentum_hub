@@ -27,15 +27,6 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { EventWithTeam, PostWithTeam } from "@/lib/types";
 
-/** The sphere cascade from the logo, reused as a divider. */
-const SPHERES = [
-  { color: "#5e00d4", size: "size-5" },
-  { color: "#7421dc", size: "size-4" },
-  { color: "#a67dda", size: "size-3" },
-  { color: "#cbaef1", size: "size-2.5" },
-  { color: "#ffffff", size: "size-1.5" },
-];
-
 const FEATURES = [
   {
     icon: MapPinIcon,
@@ -58,20 +49,6 @@ const FEATURES = [
     body: "Who you are, where you are from, who is on the team and what you have built.",
   },
 ];
-
-function SphereTrail({ className = "" }: { className?: string }) {
-  return (
-    <div className={`flex items-center gap-2 ${className}`} aria-hidden="true">
-      {SPHERES.map((sphere) => (
-        <span
-          key={sphere.color}
-          className={`${sphere.size} rounded-full`}
-          style={{ backgroundColor: sphere.color }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default async function HomePage() {
   const configured = isSupabaseConfigured;
@@ -154,7 +131,10 @@ export default async function HomePage() {
           className="pointer-events-none absolute top-40 -left-52 size-[420px] rounded-full bg-brand-deep/30 blur-[130px]"
         />
 
-        <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24 sm:pb-28">
+        {/* A full first screen, the way the reference page opens: everything
+            centred, and the cue to scroll sitting on the fold. 4rem is the
+            header, so this fills exactly what is left of the viewport. */}
+        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
           {/* The team number is pinned under the MOMENTUM wordmark rather
               than under the whole image: the wordmark occupies 36.1%-91.4%
               of the image width and ends at 66.8% of its height, measured
@@ -203,7 +183,13 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <SphereTrail className="mt-14" />
+          <p className="mt-14 text-center text-xs font-light tracking-[0.3em] text-fg-dim uppercase sm:text-sm">
+            Scroll down to reveal
+          </p>
+          <div
+            aria-hidden="true"
+            className="mt-5 h-16 w-px bg-gradient-to-b from-fg-dim to-transparent"
+          />
         </div>
       </section>
 
@@ -336,18 +322,6 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
-
-      {/* Teaser: tells the reader there is something below and gives the
-          curtain a moment of empty space to open into. */}
-      <section className="flex flex-col items-center px-4 pt-8 pb-20 sm:px-6">
-        <p className="text-center text-sm font-light tracking-[0.3em] text-fg-dim uppercase sm:text-base">
-          Scroll down to reveal
-        </p>
-        <div
-          aria-hidden="true"
-          className="mt-8 h-28 w-px bg-gradient-to-b from-fg-dim to-transparent"
-        />
-      </section>
 
       {/* The cinematic footer carries the closing call to action, so the home
           page skips the plain one in the layout - see SiteFooterSlot. */}
