@@ -116,19 +116,26 @@ const STYLES = `
 }
 `;
 
-const MARQUEE_PHRASE = "Stay in motion. Stay in momentum";
+const MARQUEE_PHRASES = [
+  "Stay in motion. Stay in momentum",
+  "Every scrimmage in one place",
+  "Workshops and outreach days",
+  "One account per team",
+  "Honest feedback after the event",
+  "Find your alliance partner",
+];
 
 /**
- * One pass of the strip. It is repeated enough times to be wider than any
- * reasonable screen, because the animation slides by exactly half the track
- * and a short phrase would otherwise leave a visible gap on wide monitors.
+ * One pass of the strip. The track holds two of these and slides by exactly
+ * half its width, so a pass has to be wider than the screen for the loop to
+ * look seamless - six phrases clear that on any monitor.
  */
 function MarqueeRun() {
   return (
     <div className="flex items-center gap-10 px-5">
-      {[0, 1, 2, 3, 4].map((index) => (
-        <span key={index} className="flex items-center gap-10">
-          {MARQUEE_PHRASE}
+      {MARQUEE_PHRASES.map((phrase, index) => (
+        <span key={phrase} className="flex items-center gap-10">
+          {phrase}
           <span
             aria-hidden="true"
             className={index % 2 === 0 ? "text-brand-mid" : "text-brand-soft"}

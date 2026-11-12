@@ -337,6 +337,18 @@ export default async function HomePage() {
         </section>
       ) : null}
 
+      {/* Teaser: tells the reader there is something below and gives the
+          curtain a moment of empty space to open into. */}
+      <section className="flex flex-col items-center px-4 pt-8 pb-20 sm:px-6">
+        <p className="text-center text-sm font-light tracking-[0.3em] text-fg-dim uppercase sm:text-base">
+          Scroll down to reveal
+        </p>
+        <div
+          aria-hidden="true"
+          className="mt-8 h-28 w-px bg-gradient-to-b from-fg-dim to-transparent"
+        />
+      </section>
+
       {/* The cinematic footer carries the closing call to action, so the home
           page skips the plain one in the layout - see SiteFooterSlot. */}
       <CinematicFooter />
