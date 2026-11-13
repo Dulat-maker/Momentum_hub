@@ -81,11 +81,15 @@ const STYLES = `
               color 0.3s ease;
 }
 
-.momentum-footer-pill:hover {
-  background: linear-gradient(145deg, var(--pill-bg-1-hover) 0%, var(--pill-bg-2-hover) 100%);
-  border-color: var(--pill-border-hover);
-  box-shadow: 0 20px 44px -12px var(--pill-shadow-hover);
-  color: var(--color-fg);
+/* Only where a pointer can actually hover. On a touch screen :hover sticks
+   after a tap and the button stays lit until something else is tapped. */
+@media (hover: hover) and (pointer: fine) {
+  .momentum-footer-pill:hover {
+    background: linear-gradient(145deg, var(--pill-bg-1-hover) 0%, var(--pill-bg-2-hover) 100%);
+    border-color: var(--pill-border-hover);
+    box-shadow: 0 20px 44px -12px var(--pill-shadow-hover);
+    color: var(--color-fg);
+  }
 }
 
 .momentum-footer-giant {
@@ -168,6 +172,13 @@ function MagneticPill({
     const element = ref.current;
     if (!element) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // Touch screens emulate one mousemove on tap and often never send
+    // mouseleave, so the button slides out from under the finger and stays
+    // there - which is why it felt stuck and needed a long press.
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      return;
+    }
 
     const onMove = (event: MouseEvent) => {
       const rect = element.getBoundingClientRect();

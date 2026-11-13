@@ -135,6 +135,12 @@
     @apply w-full rounded-xl border border-line bg-canvas px-3.5 py-2.5 text-sm text-fg transition-colors placeholder:text-fg-dim focus:border-brand-mid focus:ring-2 focus:ring-brand/30 focus:outline-none;
   }
 
+  /* The field the server pointed at, so the message at the top of a long
+     form has something to refer to. */
+  .input[aria-invalid="true"] {
+    @apply border-red-500/60 ring-2 ring-red-500/15;
+  }
+
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-panel-2 px-2.5 py-1 text-xs font-medium text-fg-muted;
   }

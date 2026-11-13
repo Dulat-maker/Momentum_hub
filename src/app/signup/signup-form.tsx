@@ -11,8 +11,18 @@ import { PROGRAM_FULL_NAMES, PROGRAM_LABELS, PROGRAMS } from "@/lib/types";
 export function SignupForm() {
   const [state, formAction] = useActionState(signUpAction, emptyActionState);
 
+  // Everything typed comes back after a rejection, except the passwords -
+  // those are never sent down to the page.
+  const value = (name: string, fallback = "") =>
+    state.values?.[name] ?? fallback;
+  const invalid = (name: string) => state.field === name;
+
   return (
-    <form action={formAction} className="space-y-5">
+    <form
+      key={state.stamp ?? "new"}
+      action={formAction}
+      className="space-y-5"
+    >
       <ErrorAlert message={state.error} />
 
       <fieldset>
@@ -24,7 +34,7 @@ export function SignupForm() {
                 type="radio"
                 name="program"
                 value={program}
-                defaultChecked={program === "ftc"}
+                defaultChecked={value("program", "ftc") === program}
                 className="peer sr-only"
               />
               <span className="block rounded-xl border border-line bg-canvas px-4 py-3 transition-colors peer-checked:border-brand-mid peer-checked:bg-brand/15 peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40">
@@ -51,6 +61,9 @@ export function SignupForm() {
             type="number"
             min={1}
             required
+            defaultValue={value("team_number")}
+            aria-invalid={invalid("team_number") || undefined}
+            autoFocus={invalid("team_number")}
             className="input"
             placeholder="12345"
           />
@@ -63,6 +76,9 @@ export function SignupForm() {
             id="team_name"
             name="team_name"
             required
+            defaultValue={value("team_name")}
+            aria-invalid={invalid("team_name") || undefined}
+            autoFocus={invalid("team_name")}
             className="input"
             placeholder="Momentum"
           />
@@ -78,6 +94,9 @@ export function SignupForm() {
             id="city"
             name="city"
             required
+            defaultValue={value("city")}
+            aria-invalid={invalid("city") || undefined}
+            autoFocus={invalid("city")}
             className="input"
             placeholder="Almaty"
           />
@@ -90,7 +109,7 @@ export function SignupForm() {
             id="country"
             name="country"
             className="input"
-            defaultValue="Kazakhstan"
+            defaultValue={value("country", "Kazakhstan")}
           />
         </div>
       </div>
@@ -107,6 +126,9 @@ export function SignupForm() {
           type="email"
           autoComplete="email"
           required
+          defaultValue={value("email")}
+          aria-invalid={invalid("email") || undefined}
+          autoFocus={invalid("email")}
           className="input"
           placeholder="team12345@example.com"
         />
@@ -128,6 +150,8 @@ export function SignupForm() {
             autoComplete="new-password"
             minLength={8}
             required
+            aria-invalid={invalid("password") || undefined}
+            autoFocus={invalid("password")}
             className="input"
           />
         </div>
@@ -142,6 +166,8 @@ export function SignupForm() {
             autoComplete="new-password"
             minLength={8}
             required
+            aria-invalid={invalid("password_repeat") || undefined}
+            autoFocus={invalid("password_repeat")}
             className="input"
           />
         </div>

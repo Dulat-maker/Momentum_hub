@@ -35,8 +35,21 @@ export function EventForm({
 }) {
   const [state, formAction] = useActionState(action, emptyActionState);
 
+  // React clears an uncontrolled form once its action finishes, so a rejected
+  // submission comes back empty unless the form is handed its own values
+  // again. `stamp` changes on every rejection, which remounts the fields so
+  // the new defaults take.
+  const value = (name: string, fallback?: string | number | null) =>
+    state.values?.[name] ?? (fallback == null ? "" : String(fallback));
+
+  const invalid = (name: string) => state.field === name;
+
   return (
-    <form action={formAction} className="space-y-8">
+    <form
+      key={state.stamp ?? "new"}
+      action={formAction}
+      className="space-y-8"
+    >
       {event ? <input type="hidden" name="event_id" value={event.id} /> : null}
 
       <ErrorAlert message={state.error} />
@@ -54,7 +67,9 @@ export function EventForm({
             id="title"
             name="title"
             required
-            defaultValue={event?.title}
+            defaultValue={value("title", event?.title)}
+            aria-invalid={invalid("title") || undefined}
+            autoFocus={invalid("title")}
             className="input"
             placeholder="Almaty pre-season scrimmage"
           />
@@ -67,7 +82,7 @@ export function EventForm({
           <input
             id="summary"
             name="summary"
-            defaultValue={event?.summary ?? ""}
+            defaultValue={value("summary", event?.summary)}
             className="input"
             placeholder="Four fields, open practice matches, bring your robot"
           />
@@ -84,7 +99,9 @@ export function EventForm({
             <select
               id="kind"
               name="kind"
-              defaultValue={event?.kind ?? "workshop"}
+              defaultValue={value("kind", event?.kind ?? "workshop")}
+            aria-invalid={invalid("kind") || undefined}
+            autoFocus={invalid("kind")}
               className="input"
             >
               {EVENT_KINDS.map((kind) => (
@@ -101,7 +118,9 @@ export function EventForm({
             <select
               id="format"
               name="format"
-              defaultValue={event?.format ?? "in_person"}
+              defaultValue={value("format", event?.format ?? "in_person")}
+            aria-invalid={invalid("format") || undefined}
+            autoFocus={invalid("format")}
               className="input"
             >
               {EVENT_FORMATS.map((format) => (
@@ -120,7 +139,9 @@ export function EventForm({
           <select
             id="audience"
             name="audience"
-            defaultValue={event?.audience ?? defaultAudience}
+            defaultValue={value("audience", event?.audience ?? defaultAudience)}
+            aria-invalid={invalid("audience") || undefined}
+            autoFocus={invalid("audience")}
             className="input"
           >
             {EVENT_AUDIENCES.map((audience) => (
@@ -153,7 +174,9 @@ export function EventForm({
               name="starts_at"
               type="datetime-local"
               required
-              defaultValue={isoToLocalInput(event?.starts_at ?? null)}
+              defaultValue={value("starts_at", isoToLocalInput(event?.starts_at ?? null))}
+            aria-invalid={invalid("starts_at") || undefined}
+            autoFocus={invalid("starts_at")}
               className="input"
             />
           </div>
@@ -165,7 +188,9 @@ export function EventForm({
               id="ends_at"
               name="ends_at"
               type="datetime-local"
-              defaultValue={isoToLocalInput(event?.ends_at ?? null)}
+              defaultValue={value("ends_at", isoToLocalInput(event?.ends_at ?? null))}
+            aria-invalid={invalid("ends_at") || undefined}
+            autoFocus={invalid("ends_at")}
               className="input"
             />
           </div>
@@ -190,7 +215,9 @@ export function EventForm({
             <input
               id="city"
               name="city"
-              defaultValue={event?.city ?? defaultCity}
+              defaultValue={value("city", event?.city ?? defaultCity)}
+            aria-invalid={invalid("city") || undefined}
+            autoFocus={invalid("city")}
               className="input"
               placeholder="Almaty"
             />
@@ -202,7 +229,7 @@ export function EventForm({
             <input
               id="country"
               name="country"
-              defaultValue={event?.country ?? defaultCountry}
+              defaultValue={value("country", event?.country ?? defaultCountry)}
               className="input"
             />
           </div>
@@ -215,7 +242,7 @@ export function EventForm({
           <input
             id="venue"
             name="venue"
-            defaultValue={event?.venue ?? ""}
+            defaultValue={value("venue", event?.venue)}
             className="input"
             placeholder="NIS Almaty, sports hall / Zoom link"
           />
@@ -239,7 +266,7 @@ export function EventForm({
               name="capacity"
               type="number"
               min={1}
-              defaultValue={event?.capacity ?? ""}
+              defaultValue={value("capacity", event?.capacity)}
               className="input"
               placeholder="12"
             />
@@ -251,7 +278,7 @@ export function EventForm({
             <input
               id="cost"
               name="cost"
-              defaultValue={event?.cost ?? ""}
+              defaultValue={value("cost", event?.cost)}
               className="input"
               placeholder="Free / 5000 KZT per team"
             />
@@ -265,7 +292,7 @@ export function EventForm({
           <input
             id="registration_url"
             name="registration_url"
-            defaultValue={event?.registration_url ?? ""}
+            defaultValue={value("registration_url", event?.registration_url)}
             className="input"
             placeholder="https://forms.gle/..."
           />
@@ -279,7 +306,7 @@ export function EventForm({
             id="description"
             name="description"
             rows={8}
-            defaultValue={event?.description ?? ""}
+            defaultValue={value("description", event?.description)}
             className="input resize-y"
             placeholder={
               "What happens, what to bring, the schedule, who to contact..."

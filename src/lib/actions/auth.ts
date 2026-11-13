@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import {
   type ActionState,
   failure,
+  formValues,
   safeInternalPath,
   success,
 } from "@/lib/action-state";
@@ -35,16 +36,39 @@ export async function signUpAction(
   const password = text(formData, "password");
   const passwordRepeat = text(formData, "password_repeat");
 
+  // The passwords are deliberately left out of what comes back.
+  const keep = { values: formValues(formData) };
+
   if (!Number.isInteger(teamNumber) || teamNumber <= 0) {
-    return failure("Enter your team number, for example 12345.");
+    return failure("Enter your team number, for example 12345.", {
+      ...keep,
+      field: "team_number",
+    });
   }
-  if (teamName.length < 2) return failure("Enter your team name.");
-  if (!city) return failure("Enter the city your team is based in.");
-  if (!email.includes("@")) return failure("Enter a valid email address.");
+  if (teamName.length < 2) {
+    return failure("Enter your team name.", { ...keep, field: "team_name" });
+  }
+  if (!city) {
+    return failure("Enter the city your team is based in.", {
+      ...keep,
+      field: "city",
+    });
+  }
+  if (!email.includes("@")) {
+    return failure("Enter a valid email address.", { ...keep, field: "email" });
+  }
   if (password.length < 8) {
-    return failure("Use a password of at least 8 characters.");
+    return failure("Use a password of at least 8 characters.", {
+      ...keep,
+      field: "password",
+    });
   }
-  if (password !== passwordRepeat) return failure("The passwords do not match.");
+  if (password !== passwordRepeat) {
+    return failure("The passwords do not match.", {
+      ...keep,
+      field: "password_repeat",
+    });
+  }
 
   const supabase = await createClient();
 
@@ -59,6 +83,7 @@ export async function signUpAction(
   if (taken) {
     return failure(
       `${PROGRAM_LABELS[program]} team ${teamNumber} already has an account on the hub. Log in instead, or ask whoever registered it for the password.`,
+      { ...keep, field: "team_number" },
     );
   }
 
@@ -88,6 +113,7 @@ export async function signUpAction(
     if (/already registered|already exists|user_already_exists/i.test(error.message)) {
       return failure(
         "That email already has an account on the hub. Each team needs its own address - log in instead, or register this team with a different email.",
+        { ...keep, field: "email" },
       );
     }
 
@@ -96,10 +122,11 @@ export async function signUpAction(
     if (/database error/i.test(error.message)) {
       return failure(
         `Could not create the account - ${PROGRAM_LABELS[program]} team ${teamNumber} may have just been registered by someone else. Try logging in.`,
+        { ...keep, field: "team_number" },
       );
     }
 
-    return failure(error.message);
+    return failure(error.message, keep);
   }
 
   if (!data.session) redirect("/login?pending=1");

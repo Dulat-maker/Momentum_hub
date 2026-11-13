@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { type ActionState, failure } from "@/lib/action-state";
+import { type ActionState, failure, formValues } from "@/lib/action-state";
 import { getCurrentTeam } from "@/lib/auth";
 import { localInputToIso } from "@/lib/datetime";
 import { optionalInteger, optionalText, text } from "@/lib/form";
@@ -31,7 +31,7 @@ type EventPayload = {
 
 function readEventPayload(
   formData: FormData,
-): { error: string } | { payload: EventPayload } {
+): { error: string; field: string } | { payload: EventPayload } {
   const title = text(formData, "title");
   const city = text(formData, "city");
   const format = text(formData, "format");
@@ -41,17 +41,38 @@ function readEventPayload(
   const endsAtRaw = text(formData, "ends_at");
   const endsAt = endsAtRaw ? localInputToIso(endsAtRaw) : null;
 
-  if (title.length < 3) return { error: "Give the event a title." };
-  if (!isEventFormat(format)) return { error: "Pick how the event runs." };
-  if (!isEventKind(kind)) return { error: "Pick the kind of event." };
-  if (!isEventAudience(audience)) return { error: "Pick who the event is for." };
-  if (!startsAt) return { error: "Pick the date and time the event starts." };
-  if (format !== "online" && !city) {
-    return { error: "Enter the city, so teams know where to go." };
+  if (title.length < 3) {
+    return { error: "Give the event a title.", field: "title" };
   }
-  if (endsAtRaw && !endsAt) return { error: "The end time is not a valid date." };
+  if (!isEventFormat(format)) {
+    return { error: "Pick how the event runs.", field: "format" };
+  }
+  if (!isEventKind(kind)) {
+    return { error: "Pick the kind of event.", field: "kind" };
+  }
+  if (!isEventAudience(audience)) {
+    return { error: "Pick who the event is for.", field: "audience" };
+  }
+  if (!startsAt) {
+    return {
+      error: "Pick the date and time the event starts.",
+      field: "starts_at",
+    };
+  }
+  if (format !== "online" && !city) {
+    return {
+      error: "Enter the city, so teams know where to go.",
+      field: "city",
+    };
+  }
+  if (endsAtRaw && !endsAt) {
+    return { error: "The end time is not a valid date.", field: "ends_at" };
+  }
   if (endsAt && endsAt <= startsAt) {
-    return { error: "The event cannot end before it starts." };
+    return {
+      error: "The event cannot end before it starts.",
+      field: "ends_at",
+    };
   }
 
   return {
@@ -79,10 +100,15 @@ export async function createEventAction(
   formData: FormData,
 ): Promise<ActionState> {
   const team = await getCurrentTeam();
-  if (!team) return failure(NOT_SIGNED_IN);
+  if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
 
   const parsed = readEventPayload(formData);
-  if ("error" in parsed) return failure(parsed.error);
+  if ("error" in parsed) {
+    return failure(parsed.error, {
+      field: parsed.field,
+      values: formValues(formData),
+    });
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -91,7 +117,7 @@ export async function createEventAction(
     .select("id")
     .single();
 
-  if (error) return failure(error.message);
+  if (error) return failure(error.message, { values: formValues(formData) });
 
   revalidatePath("/events");
   revalidatePath("/dashboard");
@@ -104,13 +130,18 @@ export async function updateEventAction(
   formData: FormData,
 ): Promise<ActionState> {
   const team = await getCurrentTeam();
-  if (!team) return failure(NOT_SIGNED_IN);
+  if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
 
   const eventId = text(formData, "event_id");
   if (!eventId) return failure("Missing event id.");
 
   const parsed = readEventPayload(formData);
-  if ("error" in parsed) return failure(parsed.error);
+  if ("error" in parsed) {
+    return failure(parsed.error, {
+      field: parsed.field,
+      values: formValues(formData),
+    });
+  }
 
   const supabase = await createClient();
   const { error } = await supabase

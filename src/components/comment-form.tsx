@@ -21,7 +21,12 @@ export function CommentForm({ postId }: { postId: string }) {
   }, [state]);
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-3">
+    <form
+      key={state.stamp ?? "new"}
+      ref={formRef}
+      action={formAction}
+      className="space-y-3"
+    >
       <input type="hidden" name="post_id" value={postId} />
 
       <ErrorAlert message={state.error} />
@@ -30,6 +35,8 @@ export function CommentForm({ postId }: { postId: string }) {
         name="body"
         rows={3}
         required
+        defaultValue={state.values?.body ?? ""}
+        aria-invalid={state.field === "body" || undefined}
         className="input resize-y"
         placeholder="Write a reply..."
         aria-label="Your reply"

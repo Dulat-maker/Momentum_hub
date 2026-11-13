@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { type ActionState, failure } from "@/lib/action-state";
+import { type ActionState, failure, formValues } from "@/lib/action-state";
 import { getCurrentTeam } from "@/lib/auth";
 import { text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
@@ -16,15 +16,23 @@ export async function createPostAction(
   formData: FormData,
 ): Promise<ActionState> {
   const team = await getCurrentTeam();
-  if (!team) return failure(NOT_SIGNED_IN);
+  if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
 
   const title = text(formData, "title");
   const body = text(formData, "body");
   const category = text(formData, "category");
 
-  if (title.length < 4) return failure("Give your post a title.");
-  if (body.length < 10) return failure("Write a few more words.");
-  if (!isPostCategory(category)) return failure("Pick a category.");
+  const keep = { values: formValues(formData) };
+
+  if (title.length < 4) {
+    return failure("Give your post a title.", { ...keep, field: "title" });
+  }
+  if (body.length < 10) {
+    return failure("Write a few more words.", { ...keep, field: "body" });
+  }
+  if (!isPostCategory(category)) {
+    return failure("Pick a category.", { ...keep, field: "category" });
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -33,7 +41,7 @@ export async function createPostAction(
     .select("id")
     .single();
 
-  if (error) return failure(error.message);
+  if (error) return failure(error.message, keep);
 
   revalidatePath("/community");
   revalidatePath("/dashboard");
@@ -66,7 +74,12 @@ export async function createCommentAction(
   const body = text(formData, "body");
 
   if (!postId) return failure("Missing post id.");
-  if (body.length < 2) return failure("Write a reply first.");
+  if (body.length < 2) {
+    return failure("Write a reply first.", {
+      field: "body",
+      values: formValues(formData),
+    });
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
