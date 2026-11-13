@@ -283,17 +283,29 @@ export default async function EventPage({
             ) : null}
           </div>
 
-          {event.registration_url ? (
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {event.registration_url ? (
+              <a
+                href={externalHref(event.registration_url)}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-primary"
+              >
+                Register for this event
+                <ArrowUpRightIcon className="size-4" />
+              </a>
+            ) : null}
+
+            {/* A plain link, not a Link: this hits a route handler that
+                returns a file rather than a page to navigate to. */}
             <a
-              href={externalHref(event.registration_url)}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-primary mt-5"
+              href={`/events/${event.id}/calendar.ics`}
+              className="btn btn-outline"
             >
-              Register for this event
-              <ArrowUpRightIcon className="size-4" />
+              <CalendarIcon className="size-4" />
+              Add to calendar
             </a>
-          ) : null}
+          </div>
 
           {event.description ? (
             <div className="mt-10">
