@@ -53,6 +53,18 @@ export interface Team extends TeamSummary {
   created_at: string;
 }
 
+export interface OutreachEntry {
+  id: string;
+  team_id: string;
+  happened_on: string;
+  title: string;
+  description: string | null;
+  people_reached: number | null;
+  hours: number | null;
+  link: string | null;
+  created_at: string;
+}
+
 export interface TeamMember {
   id: string;
   team_id: string;

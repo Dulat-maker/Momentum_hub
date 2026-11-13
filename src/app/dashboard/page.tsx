@@ -13,18 +13,28 @@ import {
   UsersIcon,
 } from "@/components/icons";
 import { MemberForm } from "@/components/member-form";
+import { OutreachForm } from "@/components/outreach-form";
 import { IconSubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
 import { TeamProfileForm } from "@/components/team-profile-form";
 import { deletePostAction } from "@/lib/actions/community";
 import { deleteEventAction } from "@/lib/actions/events";
+import { removeOutreachAction } from "@/lib/actions/outreach";
 import { removeMemberAction } from "@/lib/actions/teams";
 import { requireTeam } from "@/lib/auth";
-import { calendarTile, formatEventWhen, timeAgo } from "@/lib/format";
+import {
+  calendarTile,
+  externalHref,
+  formatDate,
+  formatEventWhen,
+  prettyHostname,
+  timeAgo,
+} from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import {
   type AggregateCount,
   CATEGORY_LABELS,
+  type OutreachEntry,
   type PostRow,
   type TeamMember,
   countOf,
@@ -68,7 +78,8 @@ export default async function DashboardPage({
 
   const supabase = await createClient();
 
-  const [memberRes, eventRes, postRes, goingRes] = await Promise.all([
+  const [memberRes, eventRes, postRes, goingRes, outreachRes] =
+    await Promise.all([
     supabase
       .from("team_members")
       .select("id, team_id, full_name, role, grade, sort_order")
@@ -95,9 +106,26 @@ export default async function DashboardPage({
         "event_id, event:events(id, title, starts_at, ends_at, city, team:teams!events_team_id_fkey(program, team_number, name))",
       )
       .eq("team_id", team.id),
+    supabase
+      .from("outreach_entries")
+      .select(
+        "id, team_id, happened_on, title, description, people_reached, hours, link, created_at",
+      )
+      .eq("team_id", team.id)
+      .order("happened_on", { ascending: false }),
   ]);
 
   const members = (memberRes.data ?? []) as unknown as TeamMember[];
+  const outreach = (outreachRes.data ?? []) as unknown as OutreachEntry[];
+
+  const outreachHours = outreach.reduce(
+    (total, entry) => total + (entry.hours ?? 0),
+    0,
+  );
+  const outreachPeople = outreach.reduce(
+    (total, entry) => total + (entry.people_reached ?? 0),
+    0,
+  );
   const events = (eventRes.data ?? []) as unknown as MyEvent[];
   const posts = (postRes.data ?? []) as unknown as MyPost[];
 
@@ -364,6 +392,75 @@ export default async function DashboardPage({
                   <form action={removeMemberAction}>
                     <input type="hidden" name="member_id" value={member.id} />
                     <IconSubmitButton title={`Remove ${member.full_name}`}>
+                      <TrashIcon className="size-4" />
+                    </IconSubmitButton>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="section-title text-xl sm:text-2xl">Outreach log</h2>
+        <p className="mt-2 max-w-2xl text-sm text-fg-muted">
+          What the team did for the community. It builds up through the season
+          and shows on your public page, which is a page you can point a judge
+          at.
+        </p>
+
+        {outreach.length > 0 ? (
+          <div className="mt-5 flex flex-wrap gap-3">
+            <span className="chip">
+              {outreach.length}{" "}
+              {outreach.length === 1 ? "activity" : "activities"}
+            </span>
+            {outreachHours > 0 ? (
+              <span className="chip">{outreachHours} team hours</span>
+            ) : null}
+            {outreachPeople > 0 ? (
+              <span className="chip">{outreachPeople} people reached</span>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="card mt-5 p-5 sm:p-6">
+          <OutreachForm today={new Date().toISOString().slice(0, 10)} />
+
+          {outreach.length > 0 ? (
+            <ul className="mt-6 divide-y divide-line border-t border-line">
+              {outreach.map((entry) => (
+                <li key={entry.id} className="flex items-start gap-3 py-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{entry.title}</p>
+                    <p className="mt-0.5 text-xs text-fg-dim">
+                      {formatDate(entry.happened_on)}
+                      {entry.people_reached
+                        ? ` · ${entry.people_reached} people`
+                        : ""}
+                      {entry.hours ? ` · ${entry.hours} h` : ""}
+                    </p>
+                    {entry.description ? (
+                      <p className="mt-1.5 text-sm whitespace-pre-line text-fg-muted">
+                        {entry.description}
+                      </p>
+                    ) : null}
+                    {entry.link ? (
+                      <a
+                        href={externalHref(entry.link)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1.5 inline-block text-xs text-brand-mid underline decoration-brand-mid/40 underline-offset-4"
+                      >
+                        {prettyHostname(entry.link)}
+                      </a>
+                    ) : null}
+                  </div>
+
+                  <form action={removeOutreachAction}>
+                    <input type="hidden" name="entry_id" value={entry.id} />
+                    <IconSubmitButton title={`Remove ${entry.title}`}>
                       <TrashIcon className="size-4" />
                     </IconSubmitButton>
                   </form>

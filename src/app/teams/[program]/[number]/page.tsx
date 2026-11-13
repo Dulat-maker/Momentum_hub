@@ -17,7 +17,12 @@ import {
 import { SetupNotice } from "@/components/setup-notice";
 import { TeamAvatar } from "@/components/team-avatar";
 import { getCurrentTeam } from "@/lib/auth";
-import { externalHref, prettyHostname, timeAgo } from "@/lib/format";
+import {
+  externalHref,
+  formatDate,
+  prettyHostname,
+  timeAgo,
+} from "@/lib/format";
 import { EVENT_CARD_SELECT, likedEventIds } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
@@ -26,6 +31,7 @@ import {
   type EventWithTeam,
   PROGRAM_FULL_NAMES,
   PROGRAM_LABELS,
+  type OutreachEntry,
   type PostRow,
   type Program,
   type Team,
@@ -100,7 +106,8 @@ export default async function TeamProfilePage({
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  const [memberRes, upcomingRes, pastRes, postRes, viewer] = await Promise.all([
+  const [memberRes, upcomingRes, pastRes, postRes, outreachRes, viewer] =
+    await Promise.all([
     supabase
       .from("team_members")
       .select("id, team_id, full_name, role, grade, sort_order")
@@ -126,10 +133,27 @@ export default async function TeamProfilePage({
       .eq("team_id", team.id)
       .order("created_at", { ascending: false })
       .limit(4),
+    supabase
+      .from("outreach_entries")
+      .select(
+        "id, team_id, happened_on, title, description, people_reached, hours, link, created_at",
+      )
+      .eq("team_id", team.id)
+      .order("happened_on", { ascending: false }),
     getCurrentTeam(),
   ]);
 
   const members = (memberRes.data ?? []) as unknown as TeamMember[];
+  const outreach = (outreachRes.data ?? []) as unknown as OutreachEntry[];
+
+  const outreachHours = outreach.reduce(
+    (total, entry) => total + (entry.hours ?? 0),
+    0,
+  );
+  const outreachPeople = outreach.reduce(
+    (total, entry) => total + (entry.people_reached ?? 0),
+    0,
+  );
   const upcoming = (upcomingRes.data ?? []) as unknown as EventWithTeam[];
   const past = (pastRes.data ?? []) as unknown as EventWithTeam[];
   const posts = (postRes.data ?? []) as unknown as PostRow[];
@@ -314,6 +338,62 @@ export default async function TeamProfilePage({
           </>
         ) : null}
       </section>
+
+      {outreach.length > 0 ? (
+        <section className="mt-12">
+          <h2 className="section-title flex items-center gap-2 text-xl sm:text-2xl">
+            <SparkIcon className="size-5 text-fg-dim" />
+            Outreach
+          </h2>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <span className="chip">
+              {outreach.length}{" "}
+              {outreach.length === 1 ? "activity" : "activities"}
+            </span>
+            {outreachHours > 0 ? (
+              <span className="chip">{outreachHours} team hours</span>
+            ) : null}
+            {outreachPeople > 0 ? (
+              <span className="chip">{outreachPeople} people reached</span>
+            ) : null}
+          </div>
+
+          <ul className="mt-5 space-y-3">
+            {outreach.map((entry) => (
+              <li key={entry.id} className="card p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="font-medium">{entry.title}</p>
+                  <p className="text-xs text-fg-dim">
+                    {formatDate(entry.happened_on)}
+                    {entry.people_reached
+                      ? ` · ${entry.people_reached} people`
+                      : ""}
+                    {entry.hours ? ` · ${entry.hours} h` : ""}
+                  </p>
+                </div>
+
+                {entry.description ? (
+                  <p className="mt-2 text-sm whitespace-pre-line text-fg-muted">
+                    {entry.description}
+                  </p>
+                ) : null}
+
+                {entry.link ? (
+                  <a
+                    href={externalHref(entry.link)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-xs text-brand-mid underline decoration-brand-mid/40 underline-offset-4"
+                  >
+                    {prettyHostname(entry.link)}
+                  </a>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {posts.length > 0 ? (
         <section className="mt-12">
