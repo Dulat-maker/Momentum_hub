@@ -52,7 +52,16 @@ export default async function LoginPage({
         <LoginForm next={next} />
       </div>
 
-      <p className="mt-6 text-center text-sm text-fg-muted">
+      <p className="mt-5 text-center text-sm">
+        <Link
+          href="/forgot-password"
+          className="text-fg-muted underline decoration-line underline-offset-4 hover:text-fg hover:decoration-brand-mid"
+        >
+          Forgot the password?
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-sm text-fg-muted">
         No account for your team yet?{" "}
         <Link
           href="/signup"

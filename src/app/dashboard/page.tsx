@@ -135,6 +135,12 @@ export default async function DashboardPage({
         </div>
       ) : null}
 
+      {params.password === "updated" ? (
+        <div className="mt-6">
+          <SuccessAlert message="Password changed. Everyone on the team will need the new one." />
+        </div>
+      ) : null}
+
       <div className="mt-8 grid gap-3 sm:grid-cols-4">
         {[
           {

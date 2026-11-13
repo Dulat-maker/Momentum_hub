@@ -84,7 +84,8 @@ Email → Confirm email → off**. Turn it back on before you share the site.
 
 If you leave it on, add your deployed URL under **Authentication → URL
 Configuration → Redirect URLs** as `https://your-site/auth/callback` so the link
-in the email lands back on the site.
+in the email lands back on the site. Password reset links come back through the
+same address, so that one entry covers both.
 
 ---
 
