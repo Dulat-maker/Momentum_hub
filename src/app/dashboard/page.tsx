@@ -511,6 +511,13 @@ export default async function DashboardPage({
                   <MessageIcon className="size-3.5" />
                   {countOf(post.comments)}
                 </span>
+                <Link
+                  href={`/community/${post.id}/edit`}
+                  className="btn btn-ghost btn-sm"
+                  title="Edit"
+                >
+                  <PencilIcon className="size-4" />
+                </Link>
                 <form action={deletePostAction}>
                   <input type="hidden" name="post_id" value={post.id} />
                   <IconSubmitButton title="Delete this post">

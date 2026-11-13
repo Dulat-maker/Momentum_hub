@@ -2,35 +2,44 @@
 
 import { useActionState } from "react";
 
-import { emptyActionState } from "@/lib/action-state";
-import { createPostAction } from "@/lib/actions/community";
-import { CATEGORY_HINTS, CATEGORY_LABELS, POST_CATEGORIES } from "@/lib/types";
+import { type ActionState, emptyActionState } from "@/lib/action-state";
+import {
+  CATEGORY_HINTS,
+  CATEGORY_LABELS,
+  POST_CATEGORIES,
+  type PostRow,
+} from "@/lib/types";
 
 import { ErrorAlert } from "./alert";
 import { SubmitButton } from "./submit-button";
 
-export function PostComposer({
+/**
+ * Used both by the composer in the community sidebar and by the edit page,
+ * so the two cannot drift apart in what they accept.
+ */
+export function PostForm({
+  action,
+  post,
   defaultCategory = "general",
+  submitLabel = "Post to community",
+  pendingLabel = "Posting...",
 }: {
+  action: (state: ActionState, formData: FormData) => Promise<ActionState>;
+  post?: PostRow;
   defaultCategory?: string;
+  submitLabel?: string;
+  pendingLabel?: string;
 }) {
-  const [state, formAction] = useActionState(
-    createPostAction,
-    emptyActionState,
-  );
+  const [state, formAction] = useActionState(action, emptyActionState);
 
-  // A rejected form is cleared by React, so it is refilled from what came
-  // back rather than making the writer type the post again.
   const value = (name: string, fallback = "") =>
     state.values?.[name] ?? fallback;
   const invalid = (name: string) => state.field === name;
 
   return (
-    <form
-      key={state.stamp ?? "new"}
-      action={formAction}
-      className="space-y-4"
-    >
+    <form key={state.stamp ?? "new"} action={formAction} className="space-y-4">
+      {post ? <input type="hidden" name="post_id" value={post.id} /> : null}
+
       <ErrorAlert message={state.error} />
 
       <div className="grid gap-4 sm:grid-cols-[1fr_200px]">
@@ -42,7 +51,7 @@ export function PostComposer({
             id="post-title"
             name="title"
             required
-            defaultValue={value("title")}
+            defaultValue={value("title", post?.title)}
             aria-invalid={invalid("title") || undefined}
             autoFocus={invalid("title")}
             className="input"
@@ -56,7 +65,7 @@ export function PostComposer({
           <select
             id="post-category"
             name="category"
-            defaultValue={value("category", defaultCategory)}
+            defaultValue={value("category", post?.category ?? defaultCategory)}
             className="input"
           >
             {POST_CATEGORIES.map((category) => (
@@ -75,9 +84,9 @@ export function PostComposer({
         <textarea
           id="post-body"
           name="body"
-          rows={5}
+          rows={post ? 10 : 5}
           required
-          defaultValue={value("body")}
+          defaultValue={value("body", post?.body)}
           aria-invalid={invalid("body") || undefined}
           autoFocus={invalid("body")}
           className="input resize-y"
@@ -86,10 +95,8 @@ export function PostComposer({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-fg-dim">
-          {CATEGORY_HINTS.general}
-        </p>
-        <SubmitButton pendingLabel="Posting...">Post to community</SubmitButton>
+        <p className="text-xs text-fg-dim">{CATEGORY_HINTS.general}</p>
+        <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
       </div>
     </form>
   );

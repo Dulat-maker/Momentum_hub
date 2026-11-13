@@ -48,6 +48,50 @@ export async function createPostAction(
   redirect(`/community/${data.id}`);
 }
 
+/**
+ * Editing exists so a typo does not cost the thread: deleting a post takes
+ * every reply with it.
+ */
+export async function updatePostAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const team = await getCurrentTeam();
+  if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
+
+  const postId = text(formData, "post_id");
+  const title = text(formData, "title");
+  const body = text(formData, "body");
+  const category = text(formData, "category");
+
+  const keep = { values: formValues(formData) };
+
+  if (!postId) return failure("Missing post id.", keep);
+  if (title.length < 4) {
+    return failure("Give your post a title.", { ...keep, field: "title" });
+  }
+  if (body.length < 10) {
+    return failure("Write a few more words.", { ...keep, field: "body" });
+  }
+  if (!isPostCategory(category)) {
+    return failure("Pick a category.", { ...keep, field: "category" });
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("posts")
+    .update({ title, body, category })
+    .eq("id", postId)
+    .eq("team_id", team.id);
+
+  if (error) return failure(error.message, keep);
+
+  revalidatePath("/community");
+  revalidatePath(`/community/${postId}`);
+  revalidatePath("/dashboard");
+  redirect(`/community/${postId}`);
+}
+
 export async function deletePostAction(formData: FormData): Promise<void> {
   const team = await getCurrentTeam();
   if (!team) return;

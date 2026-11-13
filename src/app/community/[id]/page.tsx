@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CommentForm } from "@/components/comment-form";
-import { MessageIcon, TrashIcon } from "@/components/icons";
+import { MessageIcon, PencilIcon, TrashIcon } from "@/components/icons";
 import { PostLikeButton } from "@/components/like-buttons";
 import { SetupNotice } from "@/components/setup-notice";
 import { IconSubmitButton } from "@/components/submit-button";
@@ -144,15 +144,25 @@ export default async function PostPage({
           </div>
 
           {isAuthor ? (
-            <form action={deletePostAction}>
-              <input type="hidden" name="post_id" value={post.id} />
-              <IconSubmitButton
-                className="btn btn-danger btn-sm"
-                title="Delete this post"
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href={`/community/${post.id}/edit`}
+                className="btn btn-ghost btn-sm"
+                title="Edit this post"
               >
-                <TrashIcon className="size-4" />
-              </IconSubmitButton>
-            </form>
+                <PencilIcon className="size-4" />
+                Edit
+              </Link>
+              <form action={deletePostAction}>
+                <input type="hidden" name="post_id" value={post.id} />
+                <IconSubmitButton
+                  className="btn btn-danger btn-sm"
+                  title="Delete this post"
+                >
+                  <TrashIcon className="size-4" />
+                </IconSubmitButton>
+              </form>
+            </div>
           ) : null}
         </div>
 

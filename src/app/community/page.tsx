@@ -4,8 +4,9 @@ import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { MessageIcon } from "@/components/icons";
 import { PostCard } from "@/components/post-card";
-import { PostComposer } from "@/components/post-composer";
+import { PostForm } from "@/components/post-form";
 import { SetupNotice } from "@/components/setup-notice";
+import { createPostAction } from "@/lib/actions/community";
 import { getCurrentTeam } from "@/lib/auth";
 import {
   POST_CARD_SELECT,
@@ -141,7 +142,10 @@ export default async function CommunityPage({
               <p className="mt-1 mb-4 text-xs text-fg-dim">
                 Posting as #{team.team_number} {team.name}
               </p>
-              <PostComposer defaultCategory={category ?? "general"} />
+              <PostForm
+                action={createPostAction}
+                defaultCategory={category ?? "general"}
+              />
             </div>
           ) : (
             <div className="card p-5">
