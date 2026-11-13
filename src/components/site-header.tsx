@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/events", label: "Events" },
   { href: "/teams", label: "Teams" },
   { href: "/community", label: "Community" },
+  { href: "/search", label: "Search" },
 ];
 
 export async function SiteHeader() {
