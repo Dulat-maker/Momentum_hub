@@ -83,12 +83,22 @@ export async function signUpAction(
   });
 
   if (error) {
-    // A unique-violation on team_number surfaces as a generic database error.
-    if (/database error/i.test(error.message)) {
+    // Accounts are keyed by email, and a team is its account - so one address
+    // cannot carry two teams.
+    if (/already registered|already exists|user_already_exists/i.test(error.message)) {
       return failure(
-        `Could not create the account - team ${teamNumber} may have just been registered by someone else. Try logging in.`,
+        "That email already has an account on the hub. Each team needs its own address - log in instead, or register this team with a different email.",
       );
     }
+
+    // A unique-violation on the programme and number pair surfaces as a
+    // generic database error.
+    if (/database error/i.test(error.message)) {
+      return failure(
+        `Could not create the account - ${PROGRAM_LABELS[program]} team ${teamNumber} may have just been registered by someone else. Try logging in.`,
+      );
+    }
+
     return failure(error.message);
   }
 

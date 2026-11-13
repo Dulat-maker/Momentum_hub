@@ -112,7 +112,7 @@ export function SignupForm() {
         />
         <p className="mt-1.5 text-xs text-fg-dim">
           Use an address the whole team can reach - it is the login for the
-          account.
+          account, and each team needs its own.
         </p>
       </div>
 
