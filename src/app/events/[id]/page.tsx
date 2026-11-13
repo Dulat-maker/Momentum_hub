@@ -63,6 +63,7 @@ const DETAIL_SELECT = [
   "starts_at",
   "ends_at",
   "registration_url",
+  "cover_url",
   "capacity",
   "cost",
   "created_at",
@@ -99,6 +100,7 @@ type EventDetail = {
   starts_at: string;
   ends_at: string | null;
   registration_url: string | null;
+  cover_url: string | null;
   capacity: number | null;
   cost: string | null;
   created_at: string;
@@ -246,6 +248,14 @@ export default async function EventPage({
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
+          {event.cover_url ? (
+            <img
+              src={event.cover_url}
+              alt=""
+              className="mb-7 aspect-[16/6] w-full rounded-2xl border border-line object-cover"
+            />
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip border-brand/30 text-brand-soft">
               {KIND_LABELS[event.kind]}

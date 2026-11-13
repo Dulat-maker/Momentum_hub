@@ -30,6 +30,7 @@ export default async function NewEventPage() {
       <div className="card mt-8 p-6 sm:p-8">
         <EventForm
           action={createEventAction}
+          teamId={team.id}
           submitLabel="Publish event"
           defaultCity={team.city ?? ""}
           defaultCountry={team.country ?? "Kazakhstan"}

@@ -7,7 +7,7 @@ import { updateTeamAction } from "@/lib/actions/teams";
 import type { Team } from "@/lib/types";
 
 import { ErrorAlert, SuccessAlert } from "./alert";
-import { LogoUpload } from "./logo-upload";
+import { ImageUpload } from "./image-upload";
 import { SubmitButton } from "./submit-button";
 
 export function TeamProfileForm({ team }: { team: Team }) {
@@ -114,9 +114,15 @@ export function TeamProfileForm({ team }: { team: Team }) {
         />
       </div>
 
-      <LogoUpload
+      <ImageUpload
+        name="logo_url"
+        bucket="team-logos"
+        prefix="logo"
         teamId={team.id}
-        teamName={team.name}
+        label="Team logo"
+        hint="Square works best. PNG, JPG, WebP or SVG, up to 2 MB."
+        accept={["image/png", "image/jpeg", "image/webp", "image/svg+xml"]}
+        previewName={team.name}
         defaultValue={value("logo_url", team.logo_url)}
       />
 

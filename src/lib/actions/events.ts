@@ -25,6 +25,7 @@ type EventPayload = {
   starts_at: string;
   ends_at: string | null;
   registration_url: string | null;
+  cover_url: string | null;
   capacity: number | null;
   cost: string | null;
 };
@@ -89,6 +90,7 @@ function readEventPayload(
       starts_at: startsAt,
       ends_at: endsAt,
       registration_url: optionalText(formData, "registration_url"),
+      cover_url: optionalText(formData, "cover_url"),
       capacity: optionalInteger(formData, "capacity"),
       cost: optionalText(formData, "cost"),
     },

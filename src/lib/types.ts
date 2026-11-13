@@ -77,6 +77,7 @@ export interface EventRow {
   starts_at: string;
   ends_at: string | null;
   registration_url: string | null;
+  cover_url: string | null;
   capacity: number | null;
   cost: string | null;
   created_at: string;

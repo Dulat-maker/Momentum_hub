@@ -33,13 +33,25 @@ export function EventCard({
   const host = event.team;
 
   return (
-    <article className="card card-link relative flex gap-4 p-5">
+    <article className="card card-link relative overflow-hidden">
       <Link
         href={`/events/${event.id}`}
         className="absolute inset-0 rounded-2xl"
         aria-label={event.title}
       />
 
+      {event.cover_url ? (
+        <img
+          src={event.cover_url}
+          alt=""
+          loading="lazy"
+          className={`aspect-[16/6] w-full border-b border-line object-cover ${
+            past ? "opacity-60 saturate-50" : ""
+          }`}
+        />
+      ) : null}
+
+      <div className="flex gap-4 p-5">
       <div
         className={`flex size-14 shrink-0 flex-col items-center justify-center rounded-xl border ${
           past
@@ -132,6 +144,7 @@ export function EventCard({
             />
           </div>
         </div>
+      </div>
       </div>
     </article>
   );

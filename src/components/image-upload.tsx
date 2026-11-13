@@ -6,9 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 
 import { TeamAvatar } from "./team-avatar";
 
-const BUCKET = "team-logos";
-const MAX_BYTES = 2 * 1024 * 1024;
-const ALLOWED = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+const DEFAULT_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 function extensionFor(file: File): string {
   const fromName = file.name.split(".").pop()?.toLowerCase();
@@ -18,17 +16,34 @@ function extensionFor(file: File): string {
 
 /**
  * Uploads straight from the browser into the team's own folder, then hands
- * the public URL to the surrounding form through a hidden input - so the
- * profile is still saved by the same server action as everything else.
+ * the public URL to the surrounding form through a hidden input - so whatever
+ * is being edited is still saved by the same server action as everything
+ * else, and the URL travels back with the form if the save is rejected.
  */
-export function LogoUpload({
+export function ImageUpload({
+  name,
+  bucket,
   teamId,
-  teamName,
+  label,
+  hint,
   defaultValue,
+  maxBytes = 2 * 1024 * 1024,
+  accept = DEFAULT_TYPES,
+  preview = "avatar",
+  previewName = "",
+  prefix = "image",
 }: {
+  name: string;
+  bucket: string;
   teamId: string;
-  teamName: string;
+  label: string;
+  hint: string;
   defaultValue?: string | null;
+  maxBytes?: number;
+  accept?: string[];
+  preview?: "avatar" | "wide";
+  previewName?: string;
+  prefix?: string;
 }) {
   const [url, setUrl] = useState(defaultValue ?? "");
   const [busy, setBusy] = useState(false);
@@ -38,13 +53,15 @@ export function LogoUpload({
   async function handleFile(file: File) {
     setError(null);
 
-    if (!ALLOWED.includes(file.type)) {
-      setError("Use a PNG, JPG, WebP or SVG.");
+    if (!accept.includes(file.type)) {
+      setError(
+        `Use ${accept.map((type) => type.replace("image/", "").toUpperCase()).join(", ")}.`,
+      );
       return;
     }
-    if (file.size > MAX_BYTES) {
+    if (file.size > maxBytes) {
       setError(
-        `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. Keep it under 2 MB.`,
+        `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. Keep it under ${Math.round(maxBytes / 1024 / 1024)} MB.`,
       );
       return;
     }
@@ -53,11 +70,11 @@ export function LogoUpload({
 
     try {
       const supabase = createClient();
-      // The timestamp keeps the old file cached while the new one appears.
-      const path = `${teamId}/logo-${Date.now()}.${extensionFor(file)}`;
+      // The timestamp means a replacement never collides with a cached copy.
+      const path = `${teamId}/${prefix}-${Date.now()}.${extensionFor(file)}`;
 
       const { error: uploadError } = await supabase.storage
-        .from(BUCKET)
+        .from(bucket)
         .upload(path, file, { upsert: true, contentType: file.type });
 
       if (uploadError) {
@@ -69,7 +86,7 @@ export function LogoUpload({
         return;
       }
 
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
       setUrl(data.publicUrl);
     } catch {
       setError("The upload did not go through. Check the connection and retry.");
@@ -80,10 +97,30 @@ export function LogoUpload({
 
   return (
     <div>
-      <span className="field-label">Team logo</span>
+      <span className="field-label">{label}</span>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <TeamAvatar name={teamName} logoUrl={url || null} size="lg" />
+      <div
+        className={
+          preview === "wide"
+            ? "space-y-3"
+            : "flex flex-wrap items-center gap-4"
+        }
+      >
+        {preview === "wide" ? (
+          url ? (
+            <img
+              src={url}
+              alt=""
+              className="aspect-[16/7] w-full max-w-md rounded-xl border border-line object-cover"
+            />
+          ) : (
+            <div className="grid aspect-[16/7] w-full max-w-md place-items-center rounded-xl border border-dashed border-line bg-panel-2 text-xs text-fg-dim">
+              No cover yet
+            </div>
+          )
+        ) : (
+          <TeamAvatar name={previewName} logoUrl={url || null} size="lg" />
+        )}
 
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -92,7 +129,7 @@ export function LogoUpload({
             disabled={busy}
             onClick={() => fileRef.current?.click()}
           >
-            {busy ? "Uploading..." : url ? "Replace" : "Upload a logo"}
+            {busy ? "Uploading..." : url ? "Replace" : "Upload"}
           </button>
 
           {url ? (
@@ -114,7 +151,7 @@ export function LogoUpload({
       <input
         ref={fileRef}
         type="file"
-        accept={ALLOWED.join(",")}
+        accept={accept.join(",")}
         className="sr-only"
         tabIndex={-1}
         onChange={(event) => {
@@ -126,14 +163,12 @@ export function LogoUpload({
       />
 
       {/* What the form actually submits. */}
-      <input type="hidden" name="logo_url" value={url} />
+      <input type="hidden" name={name} value={url} />
 
       {error ? (
         <p className="mt-2 text-xs text-red-300">{error}</p>
       ) : (
-        <p className="mt-2 text-xs text-fg-dim">
-          Square works best. PNG, JPG, WebP or SVG, up to 2 MB.
-        </p>
+        <p className="mt-2 text-xs text-fg-dim">{hint}</p>
       )}
     </div>
   );

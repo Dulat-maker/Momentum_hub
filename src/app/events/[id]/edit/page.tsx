@@ -61,6 +61,7 @@ export default async function EditEventPage({
       <div className="card mt-8 p-6 sm:p-8">
         <EventForm
           action={updateEventAction}
+          teamId={team.id}
           event={event}
           submitLabel="Save changes"
         />

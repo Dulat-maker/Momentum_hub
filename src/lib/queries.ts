@@ -15,6 +15,7 @@ export const EVENT_CARD_SELECT = [
   "starts_at",
   "ends_at",
   "registration_url",
+  "cover_url",
   "capacity",
   "cost",
   "created_at",

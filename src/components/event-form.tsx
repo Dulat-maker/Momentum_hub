@@ -16,10 +16,12 @@ import {
 } from "@/lib/types";
 
 import { ErrorAlert } from "./alert";
+import { ImageUpload } from "./image-upload";
 import { SubmitButton } from "./submit-button";
 
 export function EventForm({
   action,
+  teamId,
   event,
   submitLabel,
   defaultCity = "",
@@ -27,6 +29,7 @@ export function EventForm({
   defaultAudience = "all",
 }: {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
+  teamId: string;
   event?: EventRow;
   submitLabel: string;
   defaultCity?: string;
@@ -90,6 +93,18 @@ export function EventForm({
             Shown on the event card. Keep it short.
           </p>
         </div>
+
+        <ImageUpload
+          name="cover_url"
+          bucket="event-covers"
+          prefix="cover"
+          teamId={teamId}
+          label="Cover image (optional)"
+          hint="Shown on the event card and at the top of the page. Landscape, up to 4 MB."
+          preview="wide"
+          maxBytes={4 * 1024 * 1024}
+          defaultValue={value("cover_url", event?.cover_url)}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
