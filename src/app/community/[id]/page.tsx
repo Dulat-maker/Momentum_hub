@@ -8,6 +8,7 @@ import { PostLikeButton } from "@/components/like-buttons";
 import { SetupNotice } from "@/components/setup-notice";
 import { IconSubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
+import { TeamTag } from "@/components/team-tag";
 import {
   deleteCommentAction,
   deletePostAction,
@@ -21,6 +22,7 @@ import {
   type PostComment,
   type PostWithTeam,
   countOf,
+  teamHref,
 } from "@/lib/types";
 
 const POST_DETAIL_SELECT = [
@@ -30,7 +32,7 @@ const POST_DETAIL_SELECT = [
   "body",
   "category",
   "created_at",
-  "team:teams!posts_team_id_fkey(id, team_number, name, city, logo_url)",
+  "team:teams!posts_team_id_fkey(id, program, team_number, name, city, logo_url)",
   "likes:post_likes(count)",
   "comments:post_comments(count)",
 ].join(", ");
@@ -84,7 +86,7 @@ export default async function PostPage({
     supabase
       .from("post_comments")
       .select(
-        "id, post_id, team_id, body, created_at, team:teams(id, team_number, name, city, logo_url)",
+        "id, post_id, team_id, body, created_at, team:teams(id, program, team_number, name, city, logo_url)",
       )
       .eq("post_id", id)
       .order("created_at", { ascending: true }),
@@ -129,10 +131,10 @@ export default async function PostPage({
             <div className="min-w-0">
               {author ? (
                 <Link
-                  href={`/teams/${author.team_number}`}
+                  href={teamHref(author)}
                   className="text-sm font-medium hover:text-brand-mid"
                 >
-                  #{author.team_number} {author.name}
+                  <TeamTag team={author} />
                 </Link>
               ) : (
                 <span className="text-sm text-fg-dim">Team removed</span>
@@ -207,10 +209,10 @@ export default async function PostPage({
                     <div className="flex flex-wrap items-center gap-x-2 text-xs text-fg-dim">
                       {comment.team ? (
                         <Link
-                          href={`/teams/${comment.team.team_number}`}
+                          href={teamHref(comment.team)}
                           className="font-medium text-fg-muted hover:text-fg"
                         >
-                          #{comment.team.team_number} {comment.team.name}
+                          <TeamTag team={comment.team} />
                         </Link>
                       ) : (
                         <span>Team removed</span>
@@ -246,7 +248,7 @@ export default async function PostPage({
           {team ? (
             <>
               <p className="mb-3 text-xs text-fg-dim">
-                Replying as #{team.team_number} {team.name}
+                Replying as <TeamTag team={team} />
               </p>
               <CommentForm postId={post.id} />
             </>

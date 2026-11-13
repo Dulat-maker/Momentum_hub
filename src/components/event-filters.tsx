@@ -5,6 +5,8 @@ import {
   EVENT_KINDS,
   FORMAT_LABELS,
   KIND_LABELS,
+  PROGRAM_LABELS,
+  PROGRAMS,
 } from "@/lib/types";
 
 import { AutoSubmitForm } from "./auto-submit-form";
@@ -16,6 +18,7 @@ export type EventFilterValues = {
   format: string;
   kind: string;
   when: string;
+  program: string;
 };
 
 function Select({
@@ -58,8 +61,13 @@ export function EventFilters({
   current: EventFilterValues;
 }) {
   const isFiltered =
-    Boolean(current.q || current.city || current.format || current.kind) ||
-    (current.when !== "" && current.when !== "upcoming");
+    Boolean(
+      current.q ||
+        current.city ||
+        current.format ||
+        current.kind ||
+        current.program,
+    ) || (current.when !== "" && current.when !== "upcoming");
 
   return (
     <AutoSubmitForm
@@ -81,6 +89,18 @@ export function EventFilters({
           />
         </div>
       </div>
+
+      <Select
+        name="program"
+        label="For"
+        value={current.program}
+        options={[
+          ["", "FTC and FLL"],
+          ...PROGRAMS.map(
+            (program) => [program, PROGRAM_LABELS[program]] as [string, string],
+          ),
+        ]}
+      />
 
       <Select
         name="when"

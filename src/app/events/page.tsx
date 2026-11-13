@@ -9,18 +9,19 @@ import { SetupNotice } from "@/components/setup-notice";
 import { getCurrentTeam } from "@/lib/auth";
 import {
   EVENT_CARD_SELECT,
+  describeQueryError,
   eventCities,
   likedEventIds,
   sanitizeSearch,
 } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import type { EventWithTeam } from "@/lib/types";
+import { type EventWithTeam, isProgram } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Events",
   description:
-    "Every FTC scrimmage, workshop, outreach day and meetup posted by teams on the hub.",
+    "Every FTC and FLL scrimmage, workshop, outreach day and meetup posted by teams on the hub.",
 };
 
 function first(value: string | string[] | undefined): string {
@@ -48,6 +49,7 @@ export default async function EventsPage({
     format: first(params.format),
     kind: first(params.kind),
     when: first(params.when) || "upcoming",
+    program: first(params.program),
   };
 
   const supabase = await createClient();
@@ -66,6 +68,11 @@ export default async function EventsPage({
   if (filters.city) query = query.eq("city", filters.city);
   if (filters.format) query = query.eq("format", filters.format);
   if (filters.kind) query = query.eq("kind", filters.kind);
+
+  // Filtering by programme keeps the events open to everyone, too.
+  if (isProgram(filters.program)) {
+    query = query.in("audience", [filters.program, "all"]);
+  }
 
   const search = sanitizeSearch(filters.q);
   if (search) {
@@ -107,7 +114,7 @@ export default async function EventsPage({
 
       {error ? (
         <p className="mt-8 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          Could not load events: {error.message}
+          Could not load events: {describeQueryError(error)}
         </p>
       ) : null}
 

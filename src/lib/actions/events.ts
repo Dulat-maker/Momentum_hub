@@ -8,7 +8,7 @@ import { getCurrentTeam } from "@/lib/auth";
 import { localInputToIso } from "@/lib/datetime";
 import { optionalInteger, optionalText, text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
-import { isEventFormat, isEventKind } from "@/lib/types";
+import { isEventAudience, isEventFormat, isEventKind } from "@/lib/types";
 
 const NOT_SIGNED_IN = "Log in with your team account to do that.";
 
@@ -21,6 +21,7 @@ type EventPayload = {
   venue: string | null;
   format: string;
   kind: string;
+  audience: string;
   starts_at: string;
   ends_at: string | null;
   registration_url: string | null;
@@ -35,6 +36,7 @@ function readEventPayload(
   const city = text(formData, "city");
   const format = text(formData, "format");
   const kind = text(formData, "kind");
+  const audience = text(formData, "audience");
   const startsAt = localInputToIso(text(formData, "starts_at"));
   const endsAtRaw = text(formData, "ends_at");
   const endsAt = endsAtRaw ? localInputToIso(endsAtRaw) : null;
@@ -42,6 +44,7 @@ function readEventPayload(
   if (title.length < 3) return { error: "Give the event a title." };
   if (!isEventFormat(format)) return { error: "Pick how the event runs." };
   if (!isEventKind(kind)) return { error: "Pick the kind of event." };
+  if (!isEventAudience(audience)) return { error: "Pick who the event is for." };
   if (!startsAt) return { error: "Pick the date and time the event starts." };
   if (format !== "online" && !city) {
     return { error: "Enter the city, so teams know where to go." };
@@ -61,6 +64,7 @@ function readEventPayload(
       venue: optionalText(formData, "venue"),
       format,
       kind,
+      audience,
       starts_at: startsAt,
       ends_at: endsAt,
       registration_url: optionalText(formData, "registration_url"),

@@ -8,6 +8,7 @@ import { type ActionState, failure, safeInternalPath } from "@/lib/action-state"
 import { text } from "@/lib/form";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { PROGRAM_LABELS, type Program, isProgram } from "@/lib/types";
 
 const NOT_CONFIGURED =
   "Supabase is not connected yet. Add the two keys to .env.local and restart the dev server.";
@@ -20,6 +21,8 @@ export async function signUpAction(
 
   const teamNumberRaw = text(formData, "team_number");
   const teamNumber = Number(teamNumberRaw);
+  const programRaw = text(formData, "program");
+  const program: Program = isProgram(programRaw) ? programRaw : "ftc";
   const teamName = text(formData, "team_name");
   const city = text(formData, "city");
   const country = text(formData, "country") || "Kazakhstan";
@@ -28,7 +31,7 @@ export async function signUpAction(
   const passwordRepeat = text(formData, "password_repeat");
 
   if (!Number.isInteger(teamNumber) || teamNumber <= 0) {
-    return failure("Enter your FTC team number, for example 12345.");
+    return failure("Enter your team number, for example 12345.");
   }
   if (teamName.length < 2) return failure("Enter your team name.");
   if (!city) return failure("Enter the city your team is based in.");
@@ -40,15 +43,17 @@ export async function signUpAction(
 
   const supabase = await createClient();
 
+  // Numbers repeat across programmes, so the pair is what has to be free.
   const { data: taken } = await supabase
     .from("teams")
     .select("team_number")
+    .eq("program", program)
     .eq("team_number", teamNumber)
     .maybeSingle();
 
   if (taken) {
     return failure(
-      `Team ${teamNumber} already has an account on the hub. Log in instead, or ask whoever registered it for the password.`,
+      `${PROGRAM_LABELS[program]} team ${teamNumber} already has an account on the hub. Log in instead, or ask whoever registered it for the password.`,
     );
   }
 
@@ -63,6 +68,7 @@ export async function signUpAction(
     options: {
       emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
       data: {
+        program,
         team_number: String(teamNumber),
         team_name: teamName,
         city,

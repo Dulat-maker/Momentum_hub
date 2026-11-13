@@ -7,7 +7,11 @@ import { PostCard } from "@/components/post-card";
 import { PostComposer } from "@/components/post-composer";
 import { SetupNotice } from "@/components/setup-notice";
 import { getCurrentTeam } from "@/lib/auth";
-import { POST_CARD_SELECT, likedPostIds } from "@/lib/queries";
+import {
+  POST_CARD_SELECT,
+  describeQueryError,
+  likedPostIds,
+} from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -100,7 +104,7 @@ export default async function CommunityPage({
 
           {error ? (
             <p className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              Could not load posts: {error.message}
+              Could not load posts: {describeQueryError(error)}
             </p>
           ) : null}
 

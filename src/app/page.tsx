@@ -180,7 +180,7 @@ export default async function HomePage() {
             The home base for
             <br />
             <span className="bg-gradient-to-r from-brand-soft via-brand-mid to-brand bg-clip-text text-transparent">
-              FTC teams
+              FTC &amp; FLL teams
             </span>
           </h1>
 

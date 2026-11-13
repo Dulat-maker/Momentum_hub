@@ -6,18 +6,28 @@ import { EmptyState } from "@/components/empty-state";
 import { CalendarIcon, SearchIcon, UsersIcon } from "@/components/icons";
 import { SetupNotice } from "@/components/setup-notice";
 import { TeamAvatar } from "@/components/team-avatar";
-import { sanitizeSearch } from "@/lib/queries";
+import { describeQueryError, sanitizeSearch } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import { type AggregateCount, countOf } from "@/lib/types";
+import {
+  type AggregateCount,
+  PROGRAM_LABELS,
+  PROGRAMS,
+  type Program,
+  countOf,
+  isProgram,
+  teamHref,
+} from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Teams",
-  description: "Every FTC team registered on Momentum Hub, with rosters and events.",
+  description:
+    "Every FTC and FLL team registered on Momentum Hub, with rosters and events.",
 };
 
 type TeamListRow = {
   id: string;
+  program: Program;
   team_number: number;
   name: string;
   city: string | null;
@@ -50,17 +60,21 @@ export default async function TeamsPage({
   const params = await searchParams;
   const search = sanitizeSearch(first(params.q));
   const city = first(params.city);
+  const programParam = first(params.program);
+  const program = isProgram(programParam) ? programParam : null;
 
   const supabase = await createClient();
 
   let query = supabase
     .from("teams")
     .select(
-      "id, team_number, name, city, country, logo_url, about, rookie_year, events!events_team_id_fkey(count), members:team_members(count)",
+      "id, program, team_number, name, city, country, logo_url, about, rookie_year, events!events_team_id_fkey(count), members:team_members(count)",
     )
+    .order("program", { ascending: true })
     .order("team_number", { ascending: true });
 
   if (city) query = query.eq("city", city);
+  if (program) query = query.eq("program", program);
 
   if (search) {
     const numeric = Number(search);
@@ -133,11 +147,30 @@ export default async function TeamsPage({
           </select>
         </div>
 
+        <div className="min-w-36">
+          <label className="field-label" htmlFor="team-program">
+            Programme
+          </label>
+          <select
+            id="team-program"
+            name="program"
+            defaultValue={program ?? ""}
+            className="input"
+          >
+            <option value="">FTC and FLL</option>
+            {PROGRAMS.map((option) => (
+              <option key={option} value={option}>
+                {PROGRAM_LABELS[option]}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex gap-2">
           <button type="submit" className="btn btn-outline">
             Apply
           </button>
-          {search || city ? (
+          {search || city || program ? (
             <Link href="/teams" className="btn btn-ghost">
               Reset
             </Link>
@@ -147,7 +180,7 @@ export default async function TeamsPage({
 
       {error ? (
         <p className="mt-8 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          Could not load teams: {error.message}
+          Could not load teams: {describeQueryError(error)}
         </p>
       ) : null}
 
@@ -168,7 +201,7 @@ export default async function TeamsPage({
           {teams.map((team) => (
             <Link
               key={team.id}
-              href={`/teams/${team.team_number}`}
+              href={teamHref(team)}
               className="card card-link flex flex-col p-5"
             >
               <div className="flex items-center gap-3">
@@ -178,8 +211,13 @@ export default async function TeamsPage({
                   size="lg"
                 />
                 <div className="min-w-0">
-                  <p className="font-display text-lg font-semibold">
-                    #{team.team_number}
+                  <p className="flex items-center gap-2">
+                    <span className="font-display text-lg font-semibold">
+                      #{team.team_number}
+                    </span>
+                    <span className="chip chip-active">
+                      {PROGRAM_LABELS[team.program]}
+                    </span>
                   </p>
                   <p className="truncate text-sm text-fg-muted">{team.name}</p>
                 </div>

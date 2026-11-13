@@ -28,6 +28,8 @@ import {
   type PostRow,
   type TeamMember,
   countOf,
+  PROGRAM_LABELS,
+  teamHref,
 } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Team dashboard" };
@@ -101,6 +103,9 @@ export default async function DashboardPage({
             <h1 className="mt-1.5 text-2xl font-semibold sm:text-3xl">
               <span className="text-brand-mid">#</span>
               {team.team_number} {team.name}
+              <span className="chip chip-active ml-2 align-middle">
+                {PROGRAM_LABELS[team.program]}
+              </span>
             </h1>
             <p className="mt-1 text-sm text-fg-muted">
               {[team.city, team.country].filter(Boolean).join(", ") ||
@@ -111,7 +116,7 @@ export default async function DashboardPage({
 
         <div className="flex flex-wrap gap-2">
           <Link
-            href={`/teams/${team.team_number}`}
+            href={teamHref(team)}
             className="btn btn-outline btn-sm"
           >
             Public page

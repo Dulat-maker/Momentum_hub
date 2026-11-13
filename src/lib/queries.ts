@@ -11,13 +11,14 @@ export const EVENT_CARD_SELECT = [
   "venue",
   "format",
   "kind",
+  "audience",
   "starts_at",
   "ends_at",
   "registration_url",
   "capacity",
   "cost",
   "created_at",
-  "team:teams!events_team_id_fkey(id, team_number, name, city, logo_url)",
+  "team:teams!events_team_id_fkey(id, program, team_number, name, city, logo_url)",
   "likes:event_likes(count)",
   "feedback:event_feedback(count)",
 ].join(", ");
@@ -29,12 +30,13 @@ export const POST_CARD_SELECT = [
   "body",
   "category",
   "created_at",
-  "team:teams!posts_team_id_fkey(id, team_number, name, city, logo_url)",
+  "team:teams!posts_team_id_fkey(id, program, team_number, name, city, logo_url)",
   "likes:post_likes(count)",
   "comments:post_comments(count)",
 ].join(", ");
 
-export const TEAM_SUMMARY_SELECT = "id, team_number, name, city, logo_url";
+export const TEAM_SUMMARY_SELECT =
+  "id, program, team_number, name, city, logo_url";
 
 /** Which events this team has already liked - used to fill in the heart icons. */
 export async function likedEventIds(
@@ -80,6 +82,23 @@ export async function eventCities(): Promise<string[]> {
   );
 
   return [...cities].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Turns a Supabase error into something a person can act on. The common one
+ * is a schema that has not caught up with the code, which otherwise surfaces
+ * as "column teams.program does not exist".
+ */
+export function describeQueryError(
+  error: { code?: string; message: string } | null,
+): string | null {
+  if (!error) return null;
+
+  if (error.code === "42703" || /column .+ does not exist/i.test(error.message)) {
+    return "The database is a step behind the site. Run the newest file in supabase/migrations/ in the Supabase SQL editor, then reload this page.";
+  }
+
+  return error.message;
 }
 
 /** PostgREST `or` filters are comma separated, so strip the syntax characters. */

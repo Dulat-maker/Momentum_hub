@@ -1,7 +1,13 @@
 import Link from "next/link";
 
 import { calendarTile, countdown, formatTime, isPast } from "@/lib/format";
-import { type EventWithTeam, KIND_LABELS, countOf } from "@/lib/types";
+import {
+  type EventWithTeam,
+  KIND_LABELS,
+  PROGRAM_LABELS,
+  countOf,
+  teamHref,
+} from "@/lib/types";
 
 import { ClockIcon, GlobeIcon, MapPinIcon, MessageIcon } from "./icons";
 import { EventLikeButton } from "./like-buttons";
@@ -75,17 +81,24 @@ export function EventCard({
             {event.format === "online" ? "Online" : event.city || "TBA"}
           </span>
           <span className="chip">{KIND_LABELS[event.kind]}</span>
+          {event.audience === "all" ? null : (
+            <span className="chip chip-active">
+              {PROGRAM_LABELS[event.audience]}
+            </span>
+          )}
         </div>
 
         <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-line pt-3">
           {host ? (
             <Link
-              href={`/teams/${host.team_number}`}
+              href={teamHref(host)}
               className="flex min-w-0 items-center gap-2 text-xs text-fg-muted transition-colors hover:text-fg"
             >
               <TeamAvatar name={host.name} logoUrl={host.logo_url} size="sm" />
               <span className="truncate">
-                <span className="text-fg-dim">#{host.team_number}</span>{" "}
+                <span className="text-fg-dim">
+                  {PROGRAM_LABELS[host.program]} #{host.team_number}
+                </span>{" "}
                 {host.name}
               </span>
             </Link>

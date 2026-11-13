@@ -6,6 +6,7 @@ import { type ActionState, failure } from "@/lib/action-state";
 import { getCurrentTeam } from "@/lib/auth";
 import { optionalInteger, optionalText, text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
+import { teamHref } from "@/lib/types";
 
 const NOT_SIGNED_IN = "Log in with your team account to do that.";
 
@@ -47,7 +48,7 @@ export async function updateTeamAction(
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
-  revalidatePath(`/teams/${team.team_number}`);
+  revalidatePath(teamHref(team));
   revalidatePath("/", "layout");
 
   return { error: null, success: "Team profile saved." };
@@ -75,7 +76,7 @@ export async function addMemberAction(
   if (error) return failure(error.message);
 
   revalidatePath("/dashboard");
-  revalidatePath(`/teams/${team.team_number}`);
+  revalidatePath(teamHref(team));
 
   return { error: null, success: `${fullName} added to the roster.` };
 }
@@ -95,5 +96,5 @@ export async function removeMemberAction(formData: FormData): Promise<void> {
     .eq("team_id", team.id);
 
   revalidatePath("/dashboard");
-  revalidatePath(`/teams/${team.team_number}`);
+  revalidatePath(teamHref(team));
 }

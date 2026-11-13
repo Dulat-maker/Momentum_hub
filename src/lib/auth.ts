@@ -3,7 +3,7 @@ import { cache } from "react";
 
 import { isSupabaseConfigured } from "./supabase/config";
 import { createClient } from "./supabase/server";
-import type { Team } from "./types";
+import { type Team, isProgram } from "./types";
 
 /**
  * The signed-in team, or null. One account == one team, so the auth user id is
@@ -51,6 +51,7 @@ export const getCurrentTeam = cache(async (): Promise<Team | null> => {
     .from("teams")
     .insert({
       id: user.id,
+      program: isProgram(meta.program) ? meta.program : "ftc",
       team_number: teamNumber,
       name: typeof meta.team_name === "string" ? meta.team_name : "Unnamed team",
       city: typeof meta.city === "string" ? meta.city : "",

@@ -1,3 +1,9 @@
+/** The FIRST programme a team competes in. */
+export type Program = "ftc" | "fll";
+
+/** Who an event is for. "all" means both programmes are welcome. */
+export type EventAudience = "ftc" | "fll" | "all";
+
 export type EventFormat = "in_person" | "online" | "hybrid";
 
 export type EventKind =
@@ -17,14 +23,27 @@ export type PostCategory =
 
 export interface TeamSummary {
   id: string;
+  program: Program;
   team_number: number;
   name: string;
   city: string | null;
   logo_url: string | null;
 }
 
+/**
+ * FIRST reuses numbers between programmes, so a team is identified by both.
+ * Every link to a profile goes through here.
+ */
+export function teamHref(team: {
+  program: Program;
+  team_number: number;
+}): string {
+  return `/teams/${team.program}/${team.team_number}`;
+}
+
 export interface Team extends TeamSummary {
   country: string | null;
+  // program and team_number come from TeamSummary
   organization: string | null;
   about: string | null;
   website: string | null;
@@ -54,6 +73,7 @@ export interface EventRow {
   venue: string | null;
   format: EventFormat;
   kind: EventKind;
+  audience: EventAudience;
   starts_at: string;
   ends_at: string | null;
   registration_url: string | null;
@@ -111,6 +131,26 @@ export function countOf(value: AggregateCount | undefined): number {
   return value.count ?? 0;
 }
 
+export const PROGRAMS: Program[] = ["ftc", "fll"];
+
+export const EVENT_AUDIENCES: EventAudience[] = ["all", "ftc", "fll"];
+
+export const PROGRAM_LABELS: Record<Program, string> = {
+  ftc: "FTC",
+  fll: "FLL",
+};
+
+export const PROGRAM_FULL_NAMES: Record<Program, string> = {
+  ftc: "FIRST Tech Challenge",
+  fll: "FIRST LEGO League",
+};
+
+export const AUDIENCE_LABELS: Record<EventAudience, string> = {
+  all: "FTC and FLL",
+  ftc: "FTC only",
+  fll: "FLL only",
+};
+
 export const EVENT_FORMATS: EventFormat[] = ["in_person", "online", "hybrid"];
 
 export const EVENT_KINDS: EventKind[] = [
@@ -160,6 +200,17 @@ export const CATEGORY_HINTS: Record<PostCategory, string> = {
   announcement: "News from your team worth sharing",
   looking_for: "Looking for mentors, parts, a venue or an alliance partner",
 };
+
+export function isProgram(value: unknown): value is Program {
+  return typeof value === "string" && PROGRAMS.includes(value as Program);
+}
+
+export function isEventAudience(value: unknown): value is EventAudience {
+  return (
+    typeof value === "string" &&
+    EVENT_AUDIENCES.includes(value as EventAudience)
+  );
+}
 
 export function isEventFormat(value: unknown): value is EventFormat {
   return typeof value === "string" && EVENT_FORMATS.includes(value as EventFormat);

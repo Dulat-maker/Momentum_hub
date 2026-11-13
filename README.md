@@ -1,6 +1,6 @@
 # Momentum Hub
 
-A community hub for FTC teams: one account per team, a shared event calendar
+A community hub for FIRST teams - FTC and FLL: one account per team, a shared event calendar
 that teams fill in themselves, team profiles with rosters, and a community board
 with likes and feedback.
 
@@ -13,7 +13,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS 4 and Supabase
 
 | Area | What it does |
 | --- | --- |
-| **Accounts** | One login per FTC team, keyed to the team number. Email + password via Supabase Auth. |
+| **Accounts** | One login per team, keyed to its programme and number. FIRST reuses numbers between FTC and FLL, so both together identify a team. Email + password via Supabase Auth. |
 | **Events** | Any team can publish an event: city, venue, format (in person / online / hybrid), kind (competition, scrimmage, workshop, outreach, meetup), start and end time, spots, cost, registration link. |
 | **Filters** | Search plus filters by city, format, kind and upcoming / past. |
 | **Likes** | One like per team per event, so hosts can see real interest. |
@@ -39,6 +39,9 @@ npm install
 
 1. Create a free project at [supabase.com/dashboard](https://supabase.com/dashboard).
 2. Open **SQL Editor**, paste the whole of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**.
+   On a project set up earlier, also run every file in
+   [`supabase/migrations/`](supabase/migrations) in date order - the site shows
+   a notice when the database is behind the code.
    It creates the tables, indexes, the sign-up trigger and all RLS policies, and
    it is safe to run again later.
 3. Press **Connect** at the top of the dashboard → **Framework** → **Next.js**,
@@ -131,6 +134,7 @@ src/
     format.ts  datetime.ts    date formatting, all in one timezone
   proxy.ts                    refreshes the Supabase session on every request
 supabase/schema.sql           the entire database
+supabase/migrations/          changes to apply to a database already set up
 ```
 
 A few decisions worth knowing:
@@ -164,14 +168,16 @@ npm run lint    # eslint
 
 1. `npm install`
 2. Создать проект на [supabase.com](https://supabase.com/dashboard), в SQL Editor
-   вставить и запустить файл `supabase/schema.sql`.
+   вставить и запустить файл `supabase/schema.sql`, а затем по очереди
+   все файлы из `supabase/migrations/`.
 3. Скопировать **Project URL** и **anon public** ключ из Project Settings → API
    в файл `.env.local`.
 4. В Supabase выключить подтверждение email на время тестов:
    Authentication → Sign In / Providers → Email → Confirm email → off.
 5. `npm run dev` и открыть http://localhost:3000.
 
-Регистрация — одна учётка на команду, по номеру команды FTC. После входа
+Регистрация — одна учётка на команду: выбираешь программу (FTC или FLL)
+и вводишь номер. После входа
 команда может добавлять ивенты, заполнять состав и писать в комьюнити.
 
 ---

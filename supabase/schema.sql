@@ -28,12 +28,22 @@ do $block$ begin
   );
 exception when duplicate_object then null; end $block$;
 
+-- Which FIRST programme a team competes in, and who an event is aimed at.
+do $block$ begin
+  create type public.program as enum ('ftc', 'fll');
+exception when duplicate_object then null; end $block$;
+
+do $block$ begin
+  create type public.event_audience as enum ('ftc', 'fll', 'all');
+exception when duplicate_object then null; end $block$;
+
 -- ---------------------------------------------------------------- teams ----
 -- One row per account. The primary key IS the auth user id, so "a team" and
 -- "an account" are the same thing - exactly one login per team.
 create table if not exists public.teams (
   id            uuid primary key references auth.users (id) on delete cascade,
-  team_number   integer not null unique check (team_number > 0),
+  program       public.program not null default 'ftc',
+  team_number   integer not null check (team_number > 0),
   name          text    not null check (char_length(trim(name)) > 0),
   city          text    not null default '',
   country       text    not null default 'Kazakhstan',
@@ -47,7 +57,13 @@ create table if not exists public.teams (
   created_at    timestamptz not null default now()
 );
 
-create index if not exists teams_city_idx on public.teams (city);
+-- FIRST reuses numbers across programmes, so 12345 can be both an FTC and an
+-- FLL team. The pair is what identifies a team.
+create unique index if not exists teams_program_number_key
+  on public.teams (program, team_number);
+
+create index if not exists teams_city_idx    on public.teams (city);
+create index if not exists teams_program_idx on public.teams (program);
 
 -- --------------------------------------------------------- team members ----
 create table if not exists public.team_members (
@@ -72,8 +88,9 @@ create table if not exists public.events (
   city             text not null default '',
   country          text not null default 'Kazakhstan',
   venue            text,
-  format           public.event_format not null default 'in_person',
-  kind             public.event_kind   not null default 'workshop',
+  format           public.event_format   not null default 'in_person',
+  kind             public.event_kind     not null default 'workshop',
+  audience         public.event_audience not null default 'all',
   starts_at        timestamptz not null,
   ends_at          timestamptz,
   registration_url text,
@@ -151,7 +168,8 @@ security definer
 set search_path = public
 as $fn$
 declare
-  parsed_number integer;
+  parsed_number  integer;
+  parsed_program public.program;
 begin
   parsed_number := nullif(new.raw_user_meta_data ->> 'team_number', '')::integer;
 
@@ -162,13 +180,23 @@ begin
     return new;
   end if;
 
-  insert into public.teams (id, team_number, name, city, country)
+  begin
+    parsed_program := coalesce(
+      nullif(new.raw_user_meta_data ->> 'program', '')::public.program,
+      'ftc'
+    );
+  exception when invalid_text_representation then
+    parsed_program := 'ftc';
+  end;
+
+  insert into public.teams (id, team_number, name, city, country, program)
   values (
     new.id,
     parsed_number,
     coalesce(nullif(new.raw_user_meta_data ->> 'team_name', ''), 'Unnamed team'),
     coalesce(new.raw_user_meta_data ->> 'city', ''),
-    coalesce(nullif(new.raw_user_meta_data ->> 'country', ''), 'Kazakhstan')
+    coalesce(nullif(new.raw_user_meta_data ->> 'country', ''), 'Kazakhstan'),
+    parsed_program
   )
   on conflict (id) do nothing;
 

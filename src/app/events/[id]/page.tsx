@@ -21,6 +21,7 @@ import { SetupNotice } from "@/components/setup-notice";
 import { StarRating } from "@/components/star-rating";
 import { IconSubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
+import { TeamTag } from "@/components/team-tag";
 import { deleteEventAction, deleteFeedbackAction } from "@/lib/actions/events";
 import { getCurrentTeam } from "@/lib/auth";
 import {
@@ -38,6 +39,11 @@ import {
   FORMAT_LABELS,
   KIND_LABELS,
   countOf,
+  AUDIENCE_LABELS,
+  type EventAudience,
+  PROGRAM_LABELS,
+  type Program,
+  teamHref,
 } from "@/lib/types";
 
 const DETAIL_SELECT = [
@@ -51,18 +57,20 @@ const DETAIL_SELECT = [
   "venue",
   "format",
   "kind",
+  "audience",
   "starts_at",
   "ends_at",
   "registration_url",
   "capacity",
   "cost",
   "created_at",
-  "team:teams!events_team_id_fkey(id, team_number, name, city, country, logo_url, about, website, instagram, contact_email)",
+  "team:teams!events_team_id_fkey(id, program, team_number, name, city, country, logo_url, about, website, instagram, contact_email)",
   "likes:event_likes(count)",
 ].join(", ");
 
 type HostTeam = {
   id: string;
+  program: Program;
   team_number: number;
   name: string;
   city: string | null;
@@ -85,6 +93,7 @@ type EventDetail = {
   venue: string | null;
   format: keyof typeof FORMAT_LABELS;
   kind: keyof typeof KIND_LABELS;
+  audience: EventAudience;
   starts_at: string;
   ends_at: string | null;
   registration_url: string | null;
@@ -169,7 +178,7 @@ export default async function EventPage({
     supabase
       .from("event_feedback")
       .select(
-        "id, event_id, team_id, rating, body, created_at, team:teams(id, team_number, name, city, logo_url)",
+        "id, event_id, team_id, rating, body, created_at, team:teams(id, program, team_number, name, city, logo_url)",
       )
       .eq("event_id", id)
       .order("created_at", { ascending: false }),
@@ -223,6 +232,9 @@ export default async function EventPage({
               {KIND_LABELS[event.kind]}
             </span>
             <span className="chip">{FORMAT_LABELS[event.format]}</span>
+            <span className="chip chip-active">
+              {AUDIENCE_LABELS[event.audience]}
+            </span>
             <span className={`chip ${past ? "" : "border-success/30 text-success"}`}>
               {countdown(event.starts_at)}
             </span>
@@ -327,10 +339,10 @@ export default async function EventPage({
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-fg-dim">
                           {entry.team ? (
                             <Link
-                              href={`/teams/${entry.team.team_number}`}
+                              href={teamHref(entry.team)}
                               className="font-medium text-fg-muted hover:text-fg"
                             >
-                              #{entry.team.team_number} {entry.team.name}
+                              <TeamTag team={entry.team} />
                             </Link>
                           ) : (
                             <span>Team removed</span>
@@ -424,7 +436,7 @@ export default async function EventPage({
                 <TeamAvatar name={host.name} logoUrl={host.logo_url} size="lg" />
                 <div className="min-w-0">
                   <p className="font-display font-semibold">
-                    #{host.team_number}
+                    {PROGRAM_LABELS[host.program]} #{host.team_number}
                   </p>
                   <p className="truncate text-sm text-fg-muted">{host.name}</p>
                   {host.city ? (
@@ -454,7 +466,7 @@ export default async function EventPage({
               </div>
 
               <Link
-                href={`/teams/${host.team_number}`}
+                href={teamHref(host)}
                 className="btn btn-outline mt-4 w-full"
               >
                 View team profile

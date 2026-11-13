@@ -24,16 +24,27 @@ import { createClient } from "@/lib/supabase/server";
 import {
   CATEGORY_LABELS,
   type EventWithTeam,
+  PROGRAM_FULL_NAMES,
+  PROGRAM_LABELS,
   type PostRow,
+  type Program,
   type Team,
   type TeamMember,
+  isProgram,
 } from "@/lib/types";
 
-async function loadTeam(teamNumber: number): Promise<Team | null> {
+type RouteParams = { program: string; number: string };
+
+/** A team is identified by programme and number together, not by number. */
+async function loadTeam(
+  program: Program,
+  teamNumber: number,
+): Promise<Team | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("teams")
     .select("*")
+    .eq("program", program)
     .eq("team_number", teamNumber)
     .maybeSingle();
 
@@ -43,29 +54,31 @@ async function loadTeam(teamNumber: number): Promise<Team | null> {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ number: string }>;
+  params: Promise<RouteParams>;
 }): Promise<Metadata> {
   if (!isSupabaseConfigured) return { title: "Team" };
 
-  const { number } = await params;
+  const { program, number } = await params;
   const teamNumber = Number(number);
-  if (!Number.isInteger(teamNumber)) return { title: "Team not found" };
+  if (!isProgram(program) || !Number.isInteger(teamNumber)) {
+    return { title: "Team not found" };
+  }
 
-  const team = await loadTeam(teamNumber);
+  const team = await loadTeam(program, teamNumber);
   if (!team) return { title: "Team not found" };
 
   return {
-    title: `#${team.team_number} ${team.name}`,
+    title: `${PROGRAM_LABELS[team.program]} #${team.team_number} ${team.name}`,
     description:
       team.about ??
-      `FTC team ${team.team_number} from ${team.city ?? "unknown city"}.`,
+      `${PROGRAM_FULL_NAMES[team.program]} team ${team.team_number} from ${team.city ?? "unknown city"}.`,
   };
 }
 
 export default async function TeamProfilePage({
   params,
 }: {
-  params: Promise<{ number: string }>;
+  params: Promise<RouteParams>;
 }) {
   if (!isSupabaseConfigured) {
     return (
@@ -75,11 +88,13 @@ export default async function TeamProfilePage({
     );
   }
 
-  const { number } = await params;
+  const { program, number } = await params;
   const teamNumber = Number(number);
-  if (!Number.isInteger(teamNumber) || teamNumber <= 0) notFound();
+  if (!isProgram(program) || !Number.isInteger(teamNumber) || teamNumber <= 0) {
+    notFound();
+  }
 
-  const team = await loadTeam(teamNumber);
+  const team = await loadTeam(program, teamNumber);
   if (!team) notFound();
 
   const supabase = await createClient();
@@ -135,10 +150,18 @@ export default async function TeamProfilePage({
           <TeamAvatar name={team.name} logoUrl={team.logo_url} size="xl" />
 
           <div className="min-w-0 flex-1">
-            <p className="font-display text-3xl font-semibold">
-              <span className="text-brand-mid">#</span>
-              {team.team_number}
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="font-display text-3xl font-semibold">
+                <span className="text-brand-mid">#</span>
+                {team.team_number}
+              </p>
+              <span
+                className="chip chip-active"
+                title={PROGRAM_FULL_NAMES[team.program]}
+              >
+                {PROGRAM_LABELS[team.program]}
+              </span>
+            </div>
             <h1 className="mt-1 text-2xl font-semibold">{team.name}</h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-fg-muted">

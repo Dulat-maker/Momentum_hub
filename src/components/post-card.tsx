@@ -6,6 +6,7 @@ import { CATEGORY_LABELS, type PostWithTeam, countOf } from "@/lib/types";
 import { MessageIcon } from "./icons";
 import { PostLikeButton } from "./like-buttons";
 import { TeamAvatar } from "./team-avatar";
+import { TeamTag } from "./team-tag";
 
 export function PostCard({
   post,
@@ -40,7 +41,7 @@ export function PostCard({
             </span>
             {author ? (
               <span className="truncate">
-                #{author.team_number} {author.name}
+                <TeamTag team={author} />
               </span>
             ) : null}
             <span aria-hidden="true">·</span>

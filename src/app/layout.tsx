@@ -21,11 +21,11 @@ const fredoka = Fredoka({
 
 export const metadata: Metadata = {
   title: {
-    default: "Momentum Hub - the hub for FTC teams",
+    default: "Momentum Hub - the hub for FTC and FLL teams",
     template: "%s | Momentum Hub",
   },
   description:
-    "One account per FTC team: publish your events, find scrimmages and workshops near you, and talk to the other teams.",
+    "One account per team, FTC or FLL: publish your events, find scrimmages and workshops near you, and talk to the other teams.",
 };
 
 export default function RootLayout({

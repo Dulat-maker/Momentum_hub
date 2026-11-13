@@ -5,9 +5,12 @@ import { useActionState } from "react";
 import { type ActionState, emptyActionState } from "@/lib/action-state";
 import { isoToLocalInput } from "@/lib/datetime";
 import {
+  AUDIENCE_LABELS,
+  EVENT_AUDIENCES,
   EVENT_FORMATS,
   EVENT_KINDS,
   FORMAT_LABELS,
+  type EventAudience,
   type EventRow,
   KIND_LABELS,
 } from "@/lib/types";
@@ -21,12 +24,14 @@ export function EventForm({
   submitLabel,
   defaultCity = "",
   defaultCountry = "Kazakhstan",
+  defaultAudience = "all",
 }: {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   event?: EventRow;
   submitLabel: string;
   defaultCity?: string;
   defaultCountry?: string;
+  defaultAudience?: EventAudience;
 }) {
   const [state, formAction] = useActionState(action, emptyActionState);
 
@@ -106,6 +111,28 @@ export function EventForm({
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="field-label" htmlFor="audience">
+            Who it is for
+          </label>
+          <select
+            id="audience"
+            name="audience"
+            defaultValue={event?.audience ?? defaultAudience}
+            className="input"
+          >
+            {EVENT_AUDIENCES.map((audience) => (
+              <option key={audience} value={audience}>
+                {AUDIENCE_LABELS[audience]}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1.5 text-xs text-fg-dim">
+            Teams filter the calendar by this, so an FLL workshop does not show
+            up as something an FTC team should turn up to.
+          </p>
         </div>
       </section>
 

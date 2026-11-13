@@ -33,6 +33,7 @@ export default async function NewEventPage() {
           submitLabel="Publish event"
           defaultCity={team.city ?? ""}
           defaultCountry={team.country ?? "Kazakhstan"}
+          defaultAudience={team.program}
         />
       </div>
     </div>
