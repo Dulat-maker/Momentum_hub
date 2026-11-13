@@ -114,6 +114,19 @@ create table if not exists public.event_likes (
 
 create index if not exists event_likes_team_idx on public.event_likes (team_id);
 
+-- ----------------------------------------------------- event attendance ----
+-- A like means "interesting"; this means "we are coming", which is the
+-- number a host needs when booking a hall.
+create table if not exists public.event_attendance (
+  event_id   uuid not null references public.events (id) on delete cascade,
+  team_id    uuid not null references public.teams  (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (event_id, team_id)
+);
+
+create index if not exists event_attendance_team_idx  on public.event_attendance (team_id);
+create index if not exists event_attendance_event_idx on public.event_attendance (event_id);
+
 -- ------------------------------------------------------- event feedback ----
 -- One review per team per event, editable by its author.
 create table if not exists public.event_feedback (
@@ -236,6 +249,7 @@ alter table public.teams          enable row level security;
 alter table public.team_members   enable row level security;
 alter table public.events         enable row level security;
 alter table public.event_likes    enable row level security;
+alter table public.event_attendance enable row level security;
 alter table public.event_feedback enable row level security;
 alter table public.posts          enable row level security;
 alter table public.post_comments  enable row level security;
@@ -282,6 +296,16 @@ create policy "likes readable by everyone"
 drop policy if exists "team manages own likes" on public.event_likes;
 create policy "team manages own likes"
   on public.event_likes for all
+  using (auth.uid() = team_id) with check (auth.uid() = team_id);
+
+-- event_attendance --------------------------------------------------------
+drop policy if exists "attendance readable by everyone" on public.event_attendance;
+create policy "attendance readable by everyone"
+  on public.event_attendance for select using (true);
+
+drop policy if exists "team manages own attendance" on public.event_attendance;
+create policy "team manages own attendance"
+  on public.event_attendance for all
   using (auth.uid() = team_id) with check (auth.uid() = team_id);
 
 -- event_feedback ----------------------------------------------------------

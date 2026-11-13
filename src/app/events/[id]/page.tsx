@@ -21,6 +21,7 @@ import { SetupNotice } from "@/components/setup-notice";
 import { StarRating } from "@/components/star-rating";
 import { IconSubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
+import { AttendanceButton } from "@/components/attendance-button";
 import { TeamTag } from "@/components/team-tag";
 import { deleteEventAction, deleteFeedbackAction } from "@/lib/actions/events";
 import { getCurrentTeam } from "@/lib/auth";
@@ -43,6 +44,7 @@ import {
   type EventAudience,
   PROGRAM_LABELS,
   type Program,
+  type TeamSummary,
   teamHref,
 } from "@/lib/types";
 
@@ -174,16 +176,33 @@ export default async function EventPage({
   if (!event) notFound();
 
   const supabase = await createClient();
-  const [{ data: feedbackData }, team] = await Promise.all([
-    supabase
-      .from("event_feedback")
-      .select(
-        "id, event_id, team_id, rating, body, created_at, team:teams(id, program, team_number, name, city, logo_url)",
-      )
-      .eq("event_id", id)
-      .order("created_at", { ascending: false }),
-    getCurrentTeam(),
-  ]);
+  const [{ data: feedbackData }, { data: attendanceData }, team] =
+    await Promise.all([
+      supabase
+        .from("event_feedback")
+        .select(
+          "id, event_id, team_id, rating, body, created_at, team:teams(id, program, team_number, name, city, logo_url)",
+        )
+        .eq("event_id", id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("event_attendance")
+        .select(
+          "team_id, created_at, team:teams(id, program, team_number, name, city, logo_url)",
+        )
+        .eq("event_id", id)
+        .order("created_at", { ascending: true }),
+      getCurrentTeam(),
+    ]);
+
+  const attendance = (attendanceData ?? []) as unknown as {
+    team_id: string;
+    team: TeamSummary | null;
+  }[];
+  const goingCount = attendance.length;
+  const weAreGoing = team
+    ? attendance.some((row) => row.team_id === team.id)
+    : false;
 
   const feedback = (feedbackData ?? []) as unknown as EventFeedback[];
   const myFeedback = team
@@ -295,6 +314,15 @@ export default async function EventPage({
                 <ArrowUpRightIcon className="size-4" />
               </a>
             ) : null}
+
+            <AttendanceButton
+              eventId={event.id}
+              going={weAreGoing}
+              count={goingCount}
+              canRespond={Boolean(team)}
+              capacity={event.capacity}
+              past={past}
+            />
 
             {/* A plain link, not a Link: this hits a route handler that
                 returns a file rather than a page to navigate to. */}
@@ -417,6 +445,53 @@ export default async function EventPage({
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="card p-5">
+            <p className="text-xs tracking-wider text-fg-dim uppercase">
+              {past ? "Who came" : "Who is coming"}
+            </p>
+
+            <p className="font-display mt-2 text-2xl font-semibold">
+              {goingCount}
+              {event.capacity ? (
+                <span className="text-base font-normal text-fg-dim">
+                  {" "}
+                  of {event.capacity}
+                </span>
+              ) : null}
+              <span className="ml-1.5 text-sm font-normal text-fg-muted">
+                {goingCount === 1 ? "team" : "teams"}
+              </span>
+            </p>
+
+            {attendance.length > 0 ? (
+              <ul className="mt-4 space-y-2.5">
+                {attendance.map((row) =>
+                  row.team ? (
+                    <li key={row.team_id}>
+                      <Link
+                        href={teamHref(row.team)}
+                        className="flex items-center gap-2 text-fg-muted transition-colors hover:text-fg"
+                      >
+                        <TeamAvatar
+                          name={row.team.name}
+                          logoUrl={row.team.logo_url}
+                          size="sm"
+                        />
+                        <TeamTag team={row.team} className="text-xs" />
+                      </Link>
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            ) : (
+              <p className="mt-3 text-xs text-fg-dim">
+                {past
+                  ? "No team marked itself down for this one."
+                  : "Nobody yet. If your team is going, say so - it is what the host counts on when booking."}
+              </p>
+            )}
+          </div>
+
           <div className="card p-5">
             <p className="text-xs tracking-wider text-fg-dim uppercase">
               Interest

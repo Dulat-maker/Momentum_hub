@@ -9,7 +9,13 @@ import {
   teamHref,
 } from "@/lib/types";
 
-import { ClockIcon, GlobeIcon, MapPinIcon, MessageIcon } from "./icons";
+import {
+  ClockIcon,
+  GlobeIcon,
+  MapPinIcon,
+  MessageIcon,
+  UsersIcon,
+} from "./icons";
 import { EventLikeButton } from "./like-buttons";
 import { TeamAvatar } from "./team-avatar";
 
@@ -107,6 +113,13 @@ export function EventCard({
           )}
 
           <div className="flex shrink-0 items-center gap-2">
+            <span
+              className="chip"
+              title={past ? "Teams that came" : "Teams coming"}
+            >
+              <UsersIcon className="size-3.5" />
+              {countOf(event.attendance)}
+            </span>
             <span className="chip" title="Feedback left by teams">
               <MessageIcon className="size-3.5" />
               {countOf(event.feedback)}

@@ -29,6 +29,7 @@ import {
   type TeamMember,
   countOf,
   PROGRAM_LABELS,
+  type Program,
   teamHref,
 } from "@/lib/types";
 
@@ -46,6 +47,17 @@ type MyEvent = {
 
 type MyPost = PostRow & { likes: AggregateCount; comments: AggregateCount };
 
+type GoingEvent = {
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  city: string | null;
+  team: { program: Program; team_number: number; name: string } | null;
+};
+
+type GoingRow = { event_id: string; event: GoingEvent | null };
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -56,7 +68,7 @@ export default async function DashboardPage({
 
   const supabase = await createClient();
 
-  const [memberRes, eventRes, postRes] = await Promise.all([
+  const [memberRes, eventRes, postRes, goingRes] = await Promise.all([
     supabase
       .from("team_members")
       .select("id, team_id, full_name, role, grade, sort_order")
@@ -77,11 +89,26 @@ export default async function DashboardPage({
       )
       .eq("team_id", team.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("event_attendance")
+      .select(
+        "event_id, event:events(id, title, starts_at, ends_at, city, team:teams!events_team_id_fkey(program, team_number, name))",
+      )
+      .eq("team_id", team.id),
   ]);
 
   const members = (memberRes.data ?? []) as unknown as TeamMember[];
   const events = (eventRes.data ?? []) as unknown as MyEvent[];
   const posts = (postRes.data ?? []) as unknown as MyPost[];
+
+  // Only what is still ahead, soonest first - the past belongs on the event
+  // pages, not on a to-do list.
+  const now = new Date();
+  const going = ((goingRes.data ?? []) as unknown as GoingRow[])
+    .map((row) => row.event)
+    .filter((event): event is GoingEvent => Boolean(event))
+    .filter((event) => new Date(event.starts_at) >= now)
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
 
   const nextSortOrder =
     members.length > 0
@@ -241,6 +268,64 @@ export default async function DashboardPage({
                       </IconSubmitButton>
                     </form>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-12">
+        <h2 className="section-title text-xl sm:text-2xl">Where you are going</h2>
+        <p className="mt-2 text-sm text-fg-muted">
+          Events your team marked itself down for. The hosts count on this when
+          they book.
+        </p>
+
+        {going.length === 0 ? (
+          <p className="mt-4 text-sm text-fg-dim">
+            Nothing yet. Open an event and press &quot;Count us in&quot;.
+          </p>
+        ) : (
+          <div className="mt-5 space-y-3">
+            {going.map((event) => {
+              const tile = calendarTile(event.starts_at);
+              return (
+                <div
+                  key={event.id}
+                  className="card flex flex-wrap items-center gap-4 p-4"
+                >
+                  <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl border border-brand/30 bg-brand/10">
+                    <span className="text-[10px] font-semibold text-brand-mid">
+                      {tile.month}
+                    </span>
+                    <span className="font-display leading-none font-semibold">
+                      {tile.day}
+                    </span>
+                  </div>
+
+                  <div className="min-w-50 flex-1">
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="font-medium hover:text-brand-mid"
+                    >
+                      {event.title}
+                    </Link>
+                    <p className="mt-0.5 text-xs text-fg-dim">
+                      {formatEventWhen(event.starts_at, event.ends_at)}
+                      {event.city ? ` · ${event.city}` : ""}
+                      {event.team
+                        ? ` · ${PROGRAM_LABELS[event.team.program]} #${event.team.team_number} ${event.team.name}`
+                        : ""}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/events/${event.id}`}
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Open
+                  </Link>
                 </div>
               );
             })}

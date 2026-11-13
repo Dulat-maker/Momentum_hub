@@ -88,6 +88,7 @@ export interface EventWithTeam extends EventRow {
   team: TeamSummary | null;
   likes: AggregateCount;
   feedback: AggregateCount;
+  attendance: AggregateCount;
 }
 
 export interface EventFeedback {

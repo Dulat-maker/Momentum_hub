@@ -21,6 +21,7 @@ export const EVENT_CARD_SELECT = [
   "team:teams!events_team_id_fkey(id, program, team_number, name, city, logo_url)",
   "likes:event_likes(count)",
   "feedback:event_feedback(count)",
+  "attendance:event_attendance(count)",
 ].join(", ");
 
 export const POST_CARD_SELECT = [
@@ -94,7 +95,17 @@ export function describeQueryError(
 ): string | null {
   if (!error) return null;
 
-  if (error.code === "42703" || /column .+ does not exist/i.test(error.message)) {
+  // A missing column answers 42703, a missing table 42P01, and an embed of a
+  // table that is not there yet answers PGRST200 with wording of its own.
+  const behind =
+    error.code === "42703" ||
+    error.code === "42P01" ||
+    error.code === "PGRST200" ||
+    /column .+ does not exist|could not find (a relationship|the table)/i.test(
+      error.message,
+    );
+
+  if (behind) {
     return "The database is a step behind the site. Run the newest file in supabase/migrations/ in the Supabase SQL editor, then reload this page.";
   }
 

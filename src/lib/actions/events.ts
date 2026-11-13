@@ -173,6 +173,37 @@ export async function toggleEventLikeAction(eventId: string): Promise<void> {
   revalidatePath("/");
 }
 
+/** "We are coming" - separate from a like, and the team can take it back. */
+export async function toggleAttendanceAction(eventId: string): Promise<void> {
+  const team = await getCurrentTeam();
+  if (!team) return;
+
+  const supabase = await createClient();
+
+  const { data: existing } = await supabase
+    .from("event_attendance")
+    .select("event_id")
+    .eq("event_id", eventId)
+    .eq("team_id", team.id)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("event_attendance")
+      .delete()
+      .eq("event_id", eventId)
+      .eq("team_id", team.id);
+  } else {
+    await supabase
+      .from("event_attendance")
+      .insert({ event_id: eventId, team_id: team.id });
+  }
+
+  revalidatePath("/events");
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/dashboard");
+}
+
 export async function saveFeedbackAction(
   _prev: ActionState,
   formData: FormData,

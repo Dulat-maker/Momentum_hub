@@ -100,6 +100,17 @@ export default async function EventsPage({
             Scrimmages, workshops, outreach days and meetups - all posted by
             teams themselves.
           </p>
+          <p className="mt-3 max-w-xl text-sm text-fg-dim">
+            Rather not check back?{" "}
+            <a
+              href="/events.ics"
+              className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4 hover:decoration-brand-mid"
+            >
+              Subscribe to the calendar feed
+            </a>{" "}
+            - add the link under &quot;Other calendars → From URL&quot; and new
+            events arrive on their own.
+          </p>
         </div>
 
         <Link href={team ? "/events/new" : "/login?next=/events/new"} className="btn btn-primary">

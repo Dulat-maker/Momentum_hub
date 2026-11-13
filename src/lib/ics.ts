@@ -66,22 +66,21 @@ export type IcsEvent = {
   organiser?: string | null;
 };
 
-export function buildEventIcs(event: IcsEvent): string {
+function eventLines(event: IcsEvent): string[] {
   const start = new Date(event.startsAt);
   const end = event.endsAt
     ? new Date(event.endsAt)
     : new Date(start.getTime() + DEFAULT_LENGTH_MS);
 
-  const description = [event.description, event.organiser && `Hosted by ${event.organiser}`, event.url]
+  const description = [
+    event.description,
+    event.organiser && `Hosted by ${event.organiser}`,
+    event.url,
+  ]
     .filter(Boolean)
     .join("\n\n");
 
   const lines = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Momentum Hub//Events//EN",
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
     "BEGIN:VEVENT",
     `UID:${event.id}@momentum-hub`,
     `DTSTAMP:${toUtcStamp(new Date())}`,
@@ -94,10 +93,39 @@ export function buildEventIcs(event: IcsEvent): string {
   if (event.location) lines.push(`LOCATION:${escapeText(event.location)}`);
   if (event.url) lines.push(`URL:${escapeText(event.url)}`);
 
-  lines.push("END:VEVENT", "END:VCALENDAR");
+  lines.push("END:VEVENT");
+  return lines;
+}
+
+function wrapCalendar(bodyLines: string[], name?: string): string {
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Momentum Hub//Events//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+  ];
+
+  // Non-standard, but what Google, Apple and Outlook read to name a feed.
+  if (name) {
+    lines.push(`X-WR-CALNAME:${escapeText(name)}`);
+    lines.push("REFRESH-INTERVAL;VALUE=DURATION:PT6H");
+    lines.push("X-PUBLISHED-TTL:PT6H");
+  }
+
+  lines.push(...bodyLines, "END:VCALENDAR");
 
   // iCalendar wants CRLF line endings, and a trailing one.
   return `${lines.map(foldLine).join("\r\n")}\r\n`;
+}
+
+export function buildEventIcs(event: IcsEvent): string {
+  return wrapCalendar(eventLines(event));
+}
+
+/** A whole feed, for teams who subscribe once instead of saving each event. */
+export function buildCalendarIcs(events: IcsEvent[], name: string): string {
+  return wrapCalendar(events.flatMap(eventLines), name);
 }
 
 /** A safe, recognisable download name: momentum-almaty-scrimmage.ics */
