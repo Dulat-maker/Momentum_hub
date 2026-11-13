@@ -148,9 +148,11 @@ A few decisions worth knowing:
 - **Times are stored as UTC** and rendered in one fixed timezone
   (`SITE_TIMEZONE` in `src/lib/format.ts`, currently `Asia/Almaty`), so the
   server and the browser never disagree about what a date says.
-- **Logos are URLs**, not uploads, to keep Supabase Storage out of the setup. If
-  you want real uploads later, add a public bucket and swap the `logo_url`
-  field for an upload control.
+- **Logos are uploaded** straight from the browser into a public Supabase
+  Storage bucket, under a folder named after the team's own id. The storage
+  policies check that folder, so one team cannot overwrite another's file.
+  The profile form only ever submits the resulting URL, so saving still goes
+  through the same server action as the rest of the profile.
 
 ---
 

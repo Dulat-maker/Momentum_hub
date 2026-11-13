@@ -7,13 +7,22 @@ import { updateTeamAction } from "@/lib/actions/teams";
 import type { Team } from "@/lib/types";
 
 import { ErrorAlert, SuccessAlert } from "./alert";
+import { LogoUpload } from "./logo-upload";
 import { SubmitButton } from "./submit-button";
 
 export function TeamProfileForm({ team }: { team: Team }) {
   const [state, formAction] = useActionState(updateTeamAction, emptyActionState);
 
+  const value = (name: string, fallback?: string | number | null) =>
+    state.values?.[name] ?? (fallback == null ? "" : String(fallback));
+  const invalid = (name: string) => state.field === name;
+
   return (
-    <form action={formAction} className="space-y-5">
+    <form
+      key={state.stamp ?? "new"}
+      action={formAction}
+      className="space-y-5"
+    >
       <ErrorAlert message={state.error} />
       <SuccessAlert message={state.success} />
 
@@ -26,7 +35,9 @@ export function TeamProfileForm({ team }: { team: Team }) {
             id="name"
             name="name"
             required
-            defaultValue={team.name}
+            defaultValue={value("name", team.name)}
+            aria-invalid={invalid("name") || undefined}
+            autoFocus={invalid("name")}
             className="input"
           />
         </div>
@@ -37,7 +48,7 @@ export function TeamProfileForm({ team }: { team: Team }) {
           <input
             id="organization"
             name="organization"
-            defaultValue={team.organization ?? ""}
+            defaultValue={value("organization", team.organization)}
             className="input"
             placeholder="NIS Almaty"
           />
@@ -53,7 +64,9 @@ export function TeamProfileForm({ team }: { team: Team }) {
             id="city"
             name="city"
             required
-            defaultValue={team.city ?? ""}
+            defaultValue={value("city", team.city)}
+            aria-invalid={invalid("city") || undefined}
+            autoFocus={invalid("city")}
             className="input"
           />
         </div>
@@ -64,7 +77,7 @@ export function TeamProfileForm({ team }: { team: Team }) {
           <input
             id="country"
             name="country"
-            defaultValue={team.country ?? "Kazakhstan"}
+            defaultValue={value("country", team.country ?? "Kazakhstan")}
             className="input"
           />
         </div>
@@ -78,7 +91,9 @@ export function TeamProfileForm({ team }: { team: Team }) {
             type="number"
             min={1990}
             max={2100}
-            defaultValue={team.rookie_year ?? ""}
+            defaultValue={value("rookie_year", team.rookie_year)}
+            aria-invalid={invalid("rookie_year") || undefined}
+            autoFocus={invalid("rookie_year")}
             className="input"
             placeholder="2024"
           />
@@ -93,28 +108,17 @@ export function TeamProfileForm({ team }: { team: Team }) {
           id="about"
           name="about"
           rows={6}
-          defaultValue={team.about ?? ""}
+          defaultValue={value("about", team.about)}
           className="input resize-y"
           placeholder="Who you are, how long you have competed, what you are proud of, what you need help with."
         />
       </div>
 
-      <div>
-        <label className="field-label" htmlFor="logo_url">
-          Logo URL
-        </label>
-        <input
-          id="logo_url"
-          name="logo_url"
-          defaultValue={team.logo_url ?? ""}
-          className="input"
-          placeholder="https://..."
-        />
-        <p className="mt-1.5 text-xs text-fg-dim">
-          Paste a link to a square image. Your initials are used if you leave
-          this empty.
-        </p>
-      </div>
+      <LogoUpload
+        teamId={team.id}
+        teamName={team.name}
+        defaultValue={value("logo_url", team.logo_url)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
@@ -124,7 +128,7 @@ export function TeamProfileForm({ team }: { team: Team }) {
           <input
             id="website"
             name="website"
-            defaultValue={team.website ?? ""}
+            defaultValue={value("website", team.website)}
             className="input"
             placeholder="team12345.kz"
           />
@@ -136,7 +140,7 @@ export function TeamProfileForm({ team }: { team: Team }) {
           <input
             id="instagram"
             name="instagram"
-            defaultValue={team.instagram ?? ""}
+            defaultValue={value("instagram", team.instagram)}
             className="input"
             placeholder="@team12345"
           />
@@ -149,7 +153,7 @@ export function TeamProfileForm({ team }: { team: Team }) {
             id="contact_email"
             name="contact_email"
             type="email"
-            defaultValue={team.contact_email ?? ""}
+            defaultValue={value("contact_email", team.contact_email)}
             className="input"
             placeholder="hello@team12345.kz"
           />

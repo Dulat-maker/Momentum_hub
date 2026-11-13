@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { type ActionState, failure } from "@/lib/action-state";
+import { type ActionState, failure, formValues } from "@/lib/action-state";
 import { getCurrentTeam } from "@/lib/auth";
 import { optionalInteger, optionalText, text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
@@ -15,16 +15,28 @@ export async function updateTeamAction(
   formData: FormData,
 ): Promise<ActionState> {
   const team = await getCurrentTeam();
-  if (!team) return failure(NOT_SIGNED_IN);
+  if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
 
   const name = text(formData, "name");
   const city = text(formData, "city");
   const rookieYear = optionalInteger(formData, "rookie_year");
 
-  if (name.length < 2) return failure("Your team needs a name.");
-  if (!city) return failure("Enter the city your team is based in.");
+  const keep = { values: formValues(formData) };
+
+  if (name.length < 2) {
+    return failure("Your team needs a name.", { ...keep, field: "name" });
+  }
+  if (!city) {
+    return failure("Enter the city your team is based in.", {
+      ...keep,
+      field: "city",
+    });
+  }
   if (rookieYear !== null && (rookieYear < 1990 || rookieYear > 2100)) {
-    return failure("Rookie year looks wrong.");
+    return failure("Rookie year looks wrong.", {
+      ...keep,
+      field: "rookie_year",
+    });
   }
 
   const supabase = await createClient();
@@ -44,7 +56,7 @@ export async function updateTeamAction(
     })
     .eq("id", team.id);
 
-  if (error) return failure(error.message);
+  if (error) return failure(error.message, keep);
 
   revalidatePath("/dashboard");
   revalidatePath("/teams");
@@ -62,7 +74,12 @@ export async function addMemberAction(
   if (!team) return failure(NOT_SIGNED_IN);
 
   const fullName = text(formData, "full_name");
-  if (fullName.length < 2) return failure("Enter the member's name.");
+  if (fullName.length < 2) {
+    return failure("Enter the member's name.", {
+      field: "full_name",
+      values: formValues(formData),
+    });
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from("team_members").insert({
