@@ -25,20 +25,25 @@ export function IconSubmitButton({
   children,
   className = "btn btn-ghost btn-sm",
   title,
+  form,
 }: {
   children: React.ReactNode;
   className?: string;
   title: string;
+  /** Submits a form elsewhere in the document, by id - HTML has no nested
+      forms, so a button inside one table can still drive its own. */
+  form?: string;
 }) {
   const { pending } = useFormStatus();
 
   return (
     <button
       type="submit"
+      form={form}
       className={className}
       title={title}
       aria-label={title}
-      disabled={pending}
+      disabled={form ? undefined : pending}
     >
       {children}
     </button>

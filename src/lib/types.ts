@@ -53,6 +53,28 @@ export interface Team extends TeamSummary {
   created_at: string;
 }
 
+export interface EventParticipant {
+  id: string;
+  event_id: string;
+  team_id: string | null;
+  name: string;
+  round_1: number | null;
+  round_2: number | null;
+  round_3: number | null;
+  created_at: string;
+}
+
+/** The Robot Game counts a team's best round, not the sum. */
+export function bestRound(participant: EventParticipant): number | null {
+  const rounds = [
+    participant.round_1,
+    participant.round_2,
+    participant.round_3,
+  ].filter((score): score is number => typeof score === "number");
+
+  return rounds.length > 0 ? Math.max(...rounds) : null;
+}
+
 export interface OutreachEntry {
   id: string;
   team_id: string;

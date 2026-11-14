@@ -21,7 +21,12 @@ import { SetupNotice } from "@/components/setup-notice";
 import { StarRating } from "@/components/star-rating";
 import { IconSubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
+import { headers } from "next/headers";
+
 import { AttendanceButton } from "@/components/attendance-button";
+import { EventQr } from "@/components/event-qr";
+import { Leaderboard } from "@/components/leaderboard";
+import { ScoreboardEditor } from "@/components/scoreboard-editor";
 import { TeamTag } from "@/components/team-tag";
 import { deleteEventAction, deleteFeedbackAction } from "@/lib/actions/events";
 import { getCurrentTeam } from "@/lib/auth";
@@ -42,6 +47,7 @@ import {
   countOf,
   AUDIENCE_LABELS,
   type EventAudience,
+  type EventParticipant,
   PROGRAM_LABELS,
   type Program,
   type TeamSummary,
@@ -178,8 +184,12 @@ export default async function EventPage({
   if (!event) notFound();
 
   const supabase = await createClient();
-  const [{ data: feedbackData }, { data: attendanceData }, team] =
-    await Promise.all([
+  const [
+    { data: feedbackData },
+    { data: attendanceData },
+    { data: participantData },
+    team,
+  ] = await Promise.all([
       supabase
         .from("event_feedback")
         .select(
@@ -194,8 +204,18 @@ export default async function EventPage({
         )
         .eq("event_id", id)
         .order("created_at", { ascending: true }),
+      supabase
+        .from("event_participants")
+        .select(
+          "id, event_id, team_id, name, round_1, round_2, round_3, created_at",
+        )
+        .eq("event_id", id)
+        .order("created_at", { ascending: true }),
       getCurrentTeam(),
     ]);
+
+  const participants = (participantData ??
+    []) as unknown as EventParticipant[];
 
   const attendance = (attendanceData ?? []) as unknown as {
     team_id: string;
@@ -218,6 +238,12 @@ export default async function EventPage({
     ratings.length > 0
       ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
       : null;
+
+  // `host` further down is the team hosting the event, not the server.
+  const requestHeaders = await headers();
+  const requestHost = requestHeaders.get("host") ?? "localhost:3000";
+  const protocol = requestHost.startsWith("localhost") ? "http" : "https";
+  const eventUrl = `${protocol}://${requestHost}/events/${event.id}`;
 
   const isOwner = team?.id === event.team_id;
   const past = isPast(event.starts_at);
@@ -352,6 +378,35 @@ export default async function EventPage({
                 {event.description}
               </p>
             </div>
+          ) : null}
+
+          {participants.length > 0 ? (
+            <section className="mt-12">
+              <h2 className="text-lg font-semibold">
+                Robot game
+                <span className="ml-2 text-sm font-normal text-fg-dim">
+                  best round counts
+                </span>
+              </h2>
+              <div className="mt-5">
+                <Leaderboard participants={participants} />
+              </div>
+            </section>
+          ) : null}
+
+          {isOwner ? (
+            <section className="mt-12">
+              <h2 className="text-lg font-semibold">Scoreboard</h2>
+              <p className="mt-1.5 text-sm text-fg-muted">
+                Only your team sees this. Everyone else sees the table above.
+              </p>
+              <div className="card mt-5 p-5 sm:p-6">
+                <ScoreboardEditor
+                  eventId={event.id}
+                  participants={participants}
+                />
+              </div>
+            </section>
           ) : null}
 
           <section className="mt-12">
@@ -568,6 +623,20 @@ export default async function EventPage({
               >
                 View team profile
               </Link>
+            </div>
+          ) : null}
+
+          {isOwner ? (
+            <div className="card p-5">
+              <p className="text-xs tracking-wider text-fg-dim uppercase">
+                Bring teams in
+              </p>
+              <div className="mt-4">
+                <EventQr
+                  url={eventUrl}
+                  label="Put this on a slide or print it. Scanning opens this page, where a team can register and mark itself down."
+                />
+              </div>
             </div>
           ) : null}
 
