@@ -53,6 +53,8 @@ export interface Team extends TeamSummary {
   /** Set per team in SQL. Undefined until the curated-events migration
       has run, which reads as "cannot host" - the safe default. */
   can_host_events?: boolean;
+  /** Whoever registered the team. They start as its captain. */
+  created_by?: string | null;
   created_at: string;
 }
 
@@ -104,13 +106,48 @@ export interface OutreachEntry {
   created_at: string;
 }
 
+/** A person. One account is one person now, not one team. */
+export interface Profile {
+  id: string;
+  full_name: string;
+  created_at: string;
+}
+
+export type TeamRole = "captain" | "member";
+
+/**
+ * Someone on a team. This is both the public roster and the permission: the
+ * people listed here are the people who can act for the team.
+ */
 export interface TeamMember {
+  team_id: string;
+  profile_id: string;
+  role: TeamRole;
+  /** Free text shown on the roster - "Programmer", "Driver", "Mentor". */
+  title: string | null;
+  sort_order: number;
+  joined_at: string;
+  profile?: Profile | null;
+}
+
+export type InviteStatus = "pending" | "accepted" | "declined";
+
+export interface TeamInvite {
   id: string;
   team_id: string;
-  full_name: string;
-  role: string | null;
-  grade: string | null;
-  sort_order: number;
+  email: string;
+  invited_by: string | null;
+  status: InviteStatus;
+  created_at: string;
+  team?: TeamSummary | null;
+}
+
+/** Someone trusted to enter robot game scores at one event. */
+export interface EventScorekeeper {
+  event_id: string;
+  profile_id: string;
+  created_at: string;
+  profile?: Profile | null;
 }
 
 export interface EventRow {

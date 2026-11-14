@@ -15,7 +15,7 @@ import {
 } from "@/components/icons";
 import { PostCard } from "@/components/post-card";
 import { SetupNotice } from "@/components/setup-notice";
-import { getCurrentTeam } from "@/lib/auth";
+import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
 import {
   EVENT_CARD_SELECT,
   POST_CARD_SELECT,
@@ -62,12 +62,13 @@ export default async function HomePage() {
   let likedEvents = new Set<string>();
   let likedPosts = new Set<string>();
   let signedIn = false;
+  let hasTeam = false;
 
   if (configured) {
     const supabase = await createClient();
     const nowIso = new Date().toISOString();
 
-    const [eventRes, postRes, team] = await Promise.all([
+    const [eventRes, postRes, profile, team] = await Promise.all([
       supabase
         .from("events")
         .select(EVENT_CARD_SELECT)
@@ -79,12 +80,14 @@ export default async function HomePage() {
         .select(POST_CARD_SELECT)
         .order("created_at", { ascending: false })
         .limit(3),
+      getCurrentProfile(),
       getCurrentTeam(),
     ]);
 
     events = (eventRes.data ?? []) as unknown as EventWithTeam[];
     posts = (postRes.data ?? []) as unknown as PostWithTeam[];
-    signedIn = Boolean(team);
+    signedIn = Boolean(profile);
+    hasTeam = Boolean(team);
     [likedEvents, likedPosts] = await Promise.all([
       likedEventIds(team?.id),
       likedPostIds(team?.id),
@@ -185,9 +188,9 @@ export default async function HomePage() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-fg-muted">
-            One account per team. Follow the events, see what is happening in
-            other cities, and talk to the teams you will be standing next to at
-            the next competition.
+            An account of your own, a team you join, and one calendar for the
+            scrimmages and workshops everybody is running - plus the teams you
+            will be standing next to at the next competition.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
@@ -195,7 +198,7 @@ export default async function HomePage() {
               href={signedIn ? "/dashboard" : "/signup"}
               className="btn btn-primary"
             >
-              {signedIn ? "Your team" : "Register your team"}
+              {signedIn ? "Your team" : "Create an account"}
               <ArrowRightIcon className="size-4" />
             </Link>
             <Link href="/events" className="btn btn-outline">
@@ -273,7 +276,7 @@ export default async function HomePage() {
                 key={event.id}
                 event={event}
                 liked={likedEvents.has(event.id)}
-                canLike={signedIn}
+                canLike={hasTeam}
               />
             ))}
           </div>
@@ -329,7 +332,7 @@ export default async function HomePage() {
                 key={post.id}
                 post={post}
                 liked={likedPosts.has(post.id)}
-                canLike={signedIn}
+                canLike={hasTeam}
               />
             ))}
           </div>

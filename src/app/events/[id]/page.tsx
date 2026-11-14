@@ -27,9 +27,10 @@ import { AttendanceButton } from "@/components/attendance-button";
 import { EventQr } from "@/components/event-qr";
 import { Leaderboard } from "@/components/leaderboard";
 import { ScoreboardEditor } from "@/components/scoreboard-editor";
+import { Scorekeepers } from "@/components/scorekeepers";
 import { TeamTag } from "@/components/team-tag";
 import { deleteEventAction, deleteFeedbackAction } from "@/lib/actions/events";
-import { getCurrentTeam } from "@/lib/auth";
+import { getCurrentMembership, getCurrentProfile } from "@/lib/auth";
 import {
   countdown,
   externalHref,
@@ -48,6 +49,7 @@ import {
   AUDIENCE_LABELS,
   type EventAudience,
   type EventParticipant,
+  type EventScorekeeper,
   PROGRAM_LABELS,
   type Program,
   type TeamSummary,
@@ -188,7 +190,8 @@ export default async function EventPage({
     { data: feedbackData },
     { data: attendanceData },
     { data: participantData },
-    team,
+    { data: scorekeeperData },
+    membership,
   ] = await Promise.all([
       supabase
         .from("event_feedback")
@@ -211,11 +214,21 @@ export default async function EventPage({
         )
         .eq("event_id", id)
         .order("created_at", { ascending: true }),
-      getCurrentTeam(),
+      supabase
+        .from("event_scorekeepers")
+        .select(
+          "event_id, profile_id, created_at, profile:profiles(id, full_name, created_at)",
+        )
+        .eq("event_id", id),
+      getCurrentMembership(),
     ]);
 
   const participants = (participantData ??
     []) as unknown as EventParticipant[];
+
+  const team = membership?.team ?? null;
+  const scorekeepers = (scorekeeperData ??
+    []) as unknown as EventScorekeeper[];
 
   const attendance = (attendanceData ?? []) as unknown as {
     team_id: string;
@@ -246,6 +259,16 @@ export default async function EventPage({
   const eventUrl = `${protocol}://${requestHost}/events/${event.id}`;
 
   const isOwner = team?.id === event.team_id;
+  const isHostCaptain = isOwner && membership?.role === "captain";
+
+  // The captain of the hosting team, plus whoever they appointed. Scores
+  // come off the field, so this is usually a referee rather than the team.
+  const profile = await getCurrentProfile();
+  const mayScore =
+    isHostCaptain ||
+    (profile
+      ? scorekeepers.some((keeper) => keeper.profile_id === profile.id)
+      : false);
   const past = isPast(event.starts_at);
 
   const liked = team
@@ -394,11 +417,12 @@ export default async function EventPage({
             </section>
           ) : null}
 
-          {isOwner ? (
+          {mayScore ? (
             <section className="mt-12">
               <h2 className="text-lg font-semibold">Scoreboard</h2>
               <p className="mt-1.5 text-sm text-fg-muted">
-                Only your team sees this. Everyone else sees the table above.
+                Only the scorekeepers see this. Everyone else sees the table
+                above.
               </p>
               <div className="card mt-5 p-5 sm:p-6">
                 <ScoreboardEditor
@@ -623,6 +647,20 @@ export default async function EventPage({
               >
                 View team profile
               </Link>
+            </div>
+          ) : null}
+
+          {isHostCaptain ? (
+            <div className="card p-5">
+              <p className="text-xs tracking-wider text-fg-dim uppercase">
+                Who keeps score
+              </p>
+              <div className="mt-4">
+                <Scorekeepers
+                  eventId={event.id}
+                  scorekeepers={scorekeepers}
+                />
+              </div>
             </div>
           ) : null}
 

@@ -20,7 +20,7 @@ export function ForgotPasswordForm() {
 
       <div>
         <label className="field-label" htmlFor="email">
-          Team email
+          Email
         </label>
         <input
           id="email"

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { signOutAction } from "@/lib/actions/auth";
-import { getCurrentTeam } from "@/lib/auth";
+import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
 import { canHostEvents } from "@/lib/types";
 
 import { LogOutIcon, LogoMark, PlusIcon } from "./icons";
@@ -16,7 +16,12 @@ const LINKS = [
 ];
 
 export async function SiteHeader() {
-  const team = await getCurrentTeam();
+  // Signed in is about the person now. They may well have no team yet -
+  // that is the normal state between registering and joining one.
+  const [profile, team] = await Promise.all([
+    getCurrentProfile(),
+    getCurrentTeam(),
+  ]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-xl">
@@ -37,7 +42,7 @@ export async function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {team ? (
+          {profile ? (
             <>
               {canHostEvents(team) ? (
                 <Link
@@ -52,10 +57,20 @@ export async function SiteHeader() {
                 href="/dashboard"
                 className="flex max-w-50 items-center gap-2 rounded-xl border border-line px-2 py-1.5 transition-colors hover:bg-panel-2"
               >
-                <TeamAvatar name={team.name} logoUrl={team.logo_url} size="sm" />
+                <TeamAvatar
+                  name={team?.name ?? profile.full_name}
+                  logoUrl={team?.logo_url ?? null}
+                  size="sm"
+                />
                 <span className="hidden min-w-0 text-sm lg:block">
-                  <span className="text-fg-dim">#{team.team_number}</span>{" "}
-                  <span className="truncate">{team.name}</span>
+                  {team ? (
+                    <>
+                      <span className="text-fg-dim">#{team.team_number}</span>{" "}
+                      <span className="truncate">{team.name}</span>
+                    </>
+                  ) : (
+                    <span className="truncate">{profile.full_name}</span>
+                  )}
                 </span>
               </Link>
               <form action={signOutAction}>
@@ -75,7 +90,7 @@ export async function SiteHeader() {
                 Log in
               </Link>
               <Link href="/signup" className="btn btn-primary btn-sm">
-                Register team
+                Sign up
               </Link>
             </>
           )}

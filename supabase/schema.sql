@@ -11,6 +11,11 @@
 
 create extension if not exists pgcrypto;
 
+-- NOTE: this file still describes the hub as it was when an account WAS a
+-- team. Splitting people from teams - profiles, membership, invites and
+-- scorekeepers - lives in supabase/migrations/2026-11-14-people-and-teams.sql,
+-- which has to be run after this one on a fresh install.
+
 -- ---------------------------------------------------------------- enums ----
 do $block$ begin
   create type public.event_format as enum ('in_person', 'online', 'hybrid');

@@ -33,7 +33,7 @@ export default async function LoginPage({
         <LogoMark className="mx-auto h-16 w-auto" />
         <h1 className="mt-4 text-2xl font-semibold">Welcome back</h1>
         <p className="mt-1.5 text-sm text-fg-muted">
-          Log in with your team account.
+          Your own account - the one you signed up with.
         </p>
       </div>
 
@@ -62,12 +62,12 @@ export default async function LoginPage({
       </p>
 
       <p className="mt-4 text-center text-sm text-fg-muted">
-        No account for your team yet?{" "}
+        New here?{" "}
         <Link
           href="/signup"
           className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4 hover:decoration-brand-mid"
         >
-          Register your team
+          Create an account
         </Link>
       </p>
     </div>

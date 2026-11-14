@@ -12,16 +12,21 @@ import {
   TrashIcon,
   UsersIcon,
 } from "@/components/icons";
-import { MemberForm } from "@/components/member-form";
+import { InviteCard } from "@/components/invite-card";
+import { InviteForm } from "@/components/invite-form";
 import { OutreachForm } from "@/components/outreach-form";
-import { IconSubmitButton } from "@/components/submit-button";
+import { IconSubmitButton, SubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
 import { TeamProfileForm } from "@/components/team-profile-form";
 import { deletePostAction } from "@/lib/actions/community";
 import { deleteEventAction } from "@/lib/actions/events";
 import { removeOutreachAction } from "@/lib/actions/outreach";
-import { removeMemberAction } from "@/lib/actions/teams";
-import { requireTeam } from "@/lib/auth";
+import {
+  cancelInviteAction,
+  leaveTeamAction,
+  removeMemberAction,
+} from "@/lib/actions/teams";
+import { getCurrentMembership, getCurrentUser, requireProfile } from "@/lib/auth";
 import {
   calendarTile,
   externalHref,
@@ -37,6 +42,7 @@ import {
   CATEGORY_LABELS,
   type OutreachEntry,
   type PostRow,
+  type TeamInvite,
   type TeamMember,
   countOf,
   PROGRAM_LABELS,
@@ -74,19 +80,80 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const team = await requireTeam("/dashboard");
+  const profile = await requireProfile("/dashboard");
   const params = await searchParams;
+  const membership = await getCurrentMembership();
 
   const supabase = await createClient();
 
-  const [memberRes, eventRes, postRes, goingRes, outreachRes] =
+  // Signed in but on no team. That is the normal state between creating an
+  // account and either registering a team or taking up an invitation, so it
+  // gets a page of its own rather than a redirect to one of the two.
+  if (!membership) {
+    const user = await getCurrentUser();
+    const { data: inviteRows } = await supabase
+      .from("team_invites")
+      .select(
+        "id, team_id, email, invited_by, status, created_at, team:teams(id, program, team_number, name, city, logo_url)",
+      )
+      .eq("status", "pending")
+      .eq("email", (user?.email ?? "").toLowerCase())
+      .order("created_at", { ascending: false });
+
+    const invites = (inviteRows ?? []) as unknown as TeamInvite[];
+
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 py-14 sm:px-6 sm:py-20">
+        <p className="eyebrow">Hello, {profile.full_name}</p>
+        <h1 className="mt-2 text-3xl font-semibold">
+          You are not on a team yet
+        </h1>
+        <p className="mt-3 text-fg-muted">
+          Your account is ready. What is left is the team - either register
+          it, if you are the captain, or wait for your captain to invite the
+          address you signed up with.
+        </p>
+
+        {invites.length > 0 ? (
+          <section className="mt-9">
+            <h2 className="section-title text-xl">Waiting for you</h2>
+            <div className="mt-4 space-y-3">
+              {invites.map((invite) => (
+                <InviteCard key={invite.id} invite={invite} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section className="mt-9">
+          <h2 className="section-title text-xl">
+            {invites.length > 0 ? "Or start your own" : "Register your team"}
+          </h2>
+          <p className="mt-2 text-sm text-fg-muted">
+            One person does this for the whole team and becomes its captain.
+            Everyone else joins by invitation.
+          </p>
+          <Link href="/teams/new" className="btn btn-primary mt-4">
+            <PlusIcon className="size-4" />
+            Register a team
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
+  const team = membership.team;
+  const isCaptain = membership.role === "captain";
+
+  const [memberRes, eventRes, postRes, goingRes, outreachRes, inviteRes] =
     await Promise.all([
     supabase
       .from("team_members")
-      .select("id, team_id, full_name, role, grade, sort_order")
+      .select(
+        "team_id, profile_id, role, title, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
+      )
       .eq("team_id", team.id)
-      .order("sort_order", { ascending: true })
-      .order("full_name", { ascending: true }),
+      .order("sort_order", { ascending: true }),
     supabase
       .from("events")
       .select(
@@ -114,9 +181,16 @@ export default async function DashboardPage({
       )
       .eq("team_id", team.id)
       .order("happened_on", { ascending: false }),
+    supabase
+      .from("team_invites")
+      .select("id, team_id, email, invited_by, status, created_at")
+      .eq("team_id", team.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false }),
   ]);
 
   const members = (memberRes.data ?? []) as unknown as TeamMember[];
+  const pendingInvites = (inviteRes.data ?? []) as unknown as TeamInvite[];
   const outreach = (outreachRes.data ?? []) as unknown as OutreachEntry[];
 
   const outreachHours = outreach.reduce(
@@ -138,11 +212,6 @@ export default async function DashboardPage({
     .filter((event): event is GoingEvent => Boolean(event))
     .filter((event) => new Date(event.starts_at) >= now)
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-
-  const nextSortOrder =
-    members.length > 0
-      ? Math.max(...members.map((member) => member.sort_order)) + 1
-      : 0;
 
   const totalLikes = events.reduce(
     (sum, event) => sum + countOf(event.likes),
@@ -374,42 +443,109 @@ export default async function DashboardPage({
       </section>
 
       <section className="mt-12">
-        <h2 className="section-title text-xl sm:text-2xl">Roster</h2>
+        <h2 className="section-title text-xl sm:text-2xl">The team</h2>
         <p className="mt-2 text-sm text-fg-muted">
-          Shown on your public team page. Order controls the sorting.
+          Everyone here can post events and reply in the community as the team.
+          They show on your public page too.
         </p>
 
         <div className="card mt-5 p-5">
-          <MemberForm nextSortOrder={nextSortOrder} />
+          {isCaptain ? <InviteForm /> : null}
 
           {members.length > 0 ? (
-            <ul className="mt-6 divide-y divide-line border-t border-line">
+            <ul
+              className={`divide-y divide-line ${
+                isCaptain ? "mt-6 border-t border-line" : ""
+              }`}
+            >
               {members.map((member) => (
                 <li
-                  key={member.id}
+                  key={member.profile_id}
                   className="flex items-center gap-3 py-3 text-sm"
                 >
-                  <TeamAvatar name={member.full_name} size="sm" />
+                  <TeamAvatar
+                    name={member.profile?.full_name ?? "Someone"}
+                    size="sm"
+                  />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{member.full_name}</p>
+                    <p className="truncate font-medium">
+                      {member.profile?.full_name ?? "Someone"}
+                      {member.profile_id === profile.id ? (
+                        <span className="ml-2 text-xs font-normal text-fg-dim">
+                          you
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="truncate text-xs text-fg-dim">
-                      {[member.role, member.grade]
-                        .filter(Boolean)
-                        .join(" · ") || "Team member"}
+                      {member.role === "captain"
+                        ? "Captain"
+                        : member.title || "Team member"}
                     </p>
                   </div>
-                  <span className="text-xs text-fg-dim">
-                    #{member.sort_order}
-                  </span>
-                  <form action={removeMemberAction}>
-                    <input type="hidden" name="member_id" value={member.id} />
-                    <IconSubmitButton title={`Remove ${member.full_name}`}>
-                      <TrashIcon className="size-4" />
-                    </IconSubmitButton>
-                  </form>
+
+                  {isCaptain && member.role !== "captain" ? (
+                    <form action={removeMemberAction}>
+                      <input
+                        type="hidden"
+                        name="profile_id"
+                        value={member.profile_id}
+                      />
+                      <IconSubmitButton
+                        title={`Remove ${member.profile?.full_name ?? "this member"}`}
+                      >
+                        <TrashIcon className="size-4" />
+                      </IconSubmitButton>
+                    </form>
+                  ) : null}
                 </li>
               ))}
             </ul>
+          ) : null}
+
+          {isCaptain && pendingInvites.length > 0 ? (
+            <div className="mt-6 border-t border-line pt-4">
+              <p className="text-xs tracking-wider text-fg-dim uppercase">
+                Invited, not joined yet
+              </p>
+              <ul className="mt-2 divide-y divide-line">
+                {pendingInvites.map((invite) => (
+                  <li
+                    key={invite.id}
+                    className="flex items-center gap-3 py-2.5 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-fg-muted">
+                      {invite.email}
+                    </span>
+                    <form action={cancelInviteAction}>
+                      <input
+                        type="hidden"
+                        name="invite_id"
+                        value={invite.id}
+                      />
+                      <IconSubmitButton
+                        title={`Withdraw the invitation to ${invite.email}`}
+                      >
+                        <TrashIcon className="size-4" />
+                      </IconSubmitButton>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {!isCaptain ? (
+            <form
+              action={leaveTeamAction}
+              className="mt-5 border-t border-line pt-4"
+            >
+              <SubmitButton
+                className="btn btn-ghost btn-sm"
+                pendingLabel="Leaving..."
+              >
+                Leave the team
+              </SubmitButton>
+            </form>
           ) : null}
         </div>
       </section>

@@ -12,18 +12,18 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 import { SignupForm } from "./signup-form";
 
-export const metadata: Metadata = { title: "Register your team" };
+export const metadata: Metadata = { title: "Create an account" };
 
 const PERKS = [
   {
-    icon: CalendarIcon,
-    title: "Publish your events",
-    body: "Scrimmages, workshops, outreach days - add them once and every team in the country sees them.",
+    icon: UsersIcon,
+    title: "Your own login",
+    body: "No shared team password. You sign in as yourself, and what you post has your name on it.",
   },
   {
-    icon: UsersIcon,
-    title: "A profile for your team",
-    body: "Your number, city, story and roster in one place, so other teams and mentors can find you.",
+    icon: CalendarIcon,
+    title: "Everything your team is doing",
+    body: "Scrimmages, workshops and outreach days in one calendar, with your team marked down for the ones you are going to.",
   },
   {
     icon: MessageIcon,
@@ -32,8 +32,8 @@ const PERKS = [
   },
   {
     icon: TrophyIcon,
-    title: "Feedback that counts",
-    body: "Likes and reviews on events tell you what actually worked - useful evidence for judging too.",
+    title: "Scores while they happen",
+    body: "Robot game runs go up on the board at the event, so you can see where you stand without waiting for a spreadsheet.",
   },
 ];
 
@@ -49,13 +49,14 @@ export default function SignupPage() {
   return (
     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_minmax(0,460px)] lg:gap-16 lg:py-20">
       <div className="lg:pt-6">
-        <p className="eyebrow">One account per team</p>
+        <p className="eyebrow">An account of your own</p>
         <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
-          Put your team on the hub
+          Join the hub
         </h1>
         <p className="mt-4 max-w-md text-fg-muted">
-          Register once with your team number. Everyone who knows the login can
-          post events, reply in the community and keep the roster up to date.
+          Name, email, password - that is the whole thing. Once you are in,
+          either register your team or take up the invitation your captain
+          sent you.
         </p>
 
         <ul className="mt-9 space-y-6">
@@ -75,15 +76,15 @@ export default function SignupPage() {
 
       <div>
         <div className="card p-6 sm:p-8">
-          <h2 className="text-xl font-semibold">Create your team account</h2>
+          <h2 className="text-xl font-semibold">Create your account</h2>
           <p className="mt-1.5 mb-6 text-sm text-fg-muted">
-            Takes a minute. You can fill in the rest of the profile later.
+            Takes a minute. The team comes next.
           </p>
           <SignupForm />
         </div>
 
         <p className="mt-6 text-center text-sm text-fg-muted">
-          Your team is already registered?{" "}
+          Already have an account?{" "}
           <Link
             href="/login"
             className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4 hover:decoration-brand-mid"

@@ -18,7 +18,7 @@ export function LoginForm({ next }: { next: string }) {
 
       <div>
         <label className="field-label" htmlFor="email">
-          Team email
+          Email
         </label>
         <input
           id="email"

@@ -110,10 +110,12 @@ export default async function TeamProfilePage({
     await Promise.all([
     supabase
       .from("team_members")
-      .select("id, team_id, full_name, role, grade, sort_order")
+      .select(
+        "team_id, profile_id, role, title, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
+      )
       .eq("team_id", team.id)
       .order("sort_order", { ascending: true })
-      .order("full_name", { ascending: true }),
+      .order("joined_at", { ascending: true }),
     supabase
       .from("events")
       .select(EVENT_CARD_SELECT)
@@ -273,20 +275,27 @@ export default async function TeamProfilePage({
 
         {members.length === 0 ? (
           <p className="mt-4 text-sm text-fg-dim">
-            This team has not published its roster yet.
+            Nobody has joined this team on the hub yet.
           </p>
         ) : (
           <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {members.map((member) => (
-              <div key={member.id} className="card flex items-center gap-3 p-4">
-                <TeamAvatar name={member.full_name} size="md" />
+              <div
+                key={member.profile_id}
+                className="card flex items-center gap-3 p-4"
+              >
+                <TeamAvatar
+                  name={member.profile?.full_name ?? "Someone"}
+                  size="md"
+                />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">
-                    {member.full_name}
+                    {member.profile?.full_name ?? "Someone"}
                   </p>
                   <p className="truncate text-xs text-fg-dim">
-                    {[member.role, member.grade].filter(Boolean).join(" · ") ||
-                      "Team member"}
+                    {member.role === "captain"
+                      ? "Captain"
+                      : member.title || "Team member"}
                   </p>
                 </div>
               </div>

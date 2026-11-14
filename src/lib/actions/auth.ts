@@ -14,24 +14,24 @@ import {
 import { text } from "@/lib/form";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import { PROGRAM_LABELS, type Program, isProgram } from "@/lib/types";
 
 const NOT_CONFIGURED =
   "Supabase is not connected yet. Add the two keys to .env.local and restart the dev server.";
 
+/**
+ * Registers a person, not a team.
+ *
+ * A team used to BE an account, which meant a team of ten either shared one
+ * password or showed up on the hub ten times. Now everyone has their own
+ * login; a team is made, or joined, afterwards.
+ */
 export async function signUpAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   if (!isSupabaseConfigured) return failure(NOT_CONFIGURED);
 
-  const teamNumberRaw = text(formData, "team_number");
-  const teamNumber = Number(teamNumberRaw);
-  const programRaw = text(formData, "program");
-  const program: Program = isProgram(programRaw) ? programRaw : "ftc";
-  const teamName = text(formData, "team_name");
-  const city = text(formData, "city");
-  const country = text(formData, "country") || "Kazakhstan";
+  const fullName = text(formData, "full_name");
   const email = text(formData, "email");
   const password = text(formData, "password");
   const passwordRepeat = text(formData, "password_repeat");
@@ -39,20 +39,8 @@ export async function signUpAction(
   // The passwords are deliberately left out of what comes back.
   const keep = { values: formValues(formData) };
 
-  if (!Number.isInteger(teamNumber) || teamNumber <= 0) {
-    return failure("Enter your team number, for example 12345.", {
-      ...keep,
-      field: "team_number",
-    });
-  }
-  if (teamName.length < 2) {
-    return failure("Enter your team name.", { ...keep, field: "team_name" });
-  }
-  if (!city) {
-    return failure("Enter the city your team is based in.", {
-      ...keep,
-      field: "city",
-    });
+  if (fullName.length < 2) {
+    return failure("Enter your name.", { ...keep, field: "full_name" });
   }
   if (!email.includes("@")) {
     return failure("Enter a valid email address.", { ...keep, field: "email" });
@@ -72,21 +60,6 @@ export async function signUpAction(
 
   const supabase = await createClient();
 
-  // Numbers repeat across programmes, so the pair is what has to be free.
-  const { data: taken } = await supabase
-    .from("teams")
-    .select("team_number")
-    .eq("program", program)
-    .eq("team_number", teamNumber)
-    .maybeSingle();
-
-  if (taken) {
-    return failure(
-      `${PROGRAM_LABELS[program]} team ${teamNumber} already has an account on the hub. Log in instead, or ask whoever registered it for the password.`,
-      { ...keep, field: "team_number" },
-    );
-  }
-
   const requestHeaders = await headers();
   const host = requestHeaders.get("host");
   const origin =
@@ -97,32 +70,19 @@ export async function signUpAction(
     password,
     options: {
       emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
-      data: {
-        program,
-        team_number: String(teamNumber),
-        team_name: teamName,
-        city,
-        country,
-      },
+      data: { full_name: fullName },
     },
   });
 
   if (error) {
-    // Accounts are keyed by email, and a team is its account - so one address
-    // cannot carry two teams.
-    if (/already registered|already exists|user_already_exists/i.test(error.message)) {
+    if (
+      /already registered|already exists|user_already_exists/i.test(
+        error.message,
+      )
+    ) {
       return failure(
-        "That email already has an account on the hub. Each team needs its own address - log in instead, or register this team with a different email.",
+        "That email already has an account. Log in instead, or reset the password if you have forgotten it.",
         { ...keep, field: "email" },
-      );
-    }
-
-    // A unique-violation on the programme and number pair surfaces as a
-    // generic database error.
-    if (/database error/i.test(error.message)) {
-      return failure(
-        `Could not create the account - ${PROGRAM_LABELS[program]} team ${teamNumber} may have just been registered by someone else. Try logging in.`,
-        { ...keep, field: "team_number" },
       );
     }
 
