@@ -3,8 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { type ActionState, failure, formValues } from "@/lib/action-state";
-import { getCurrentTeam } from "@/lib/auth";
+import {
+  type ActionState,
+  failure,
+  formValues,
+  success,
+} from "@/lib/action-state";
+import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
 import { localInputToIso } from "@/lib/datetime";
 import { optionalInteger, optionalText, text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
@@ -295,4 +300,117 @@ export async function deleteFeedbackAction(formData: FormData): Promise<void> {
     .eq("team_id", team.id);
 
   if (eventId) revalidatePath(`/events/${eventId}`);
+}
+
+/** Whether the signed-in person is on the team hosting this event. */
+async function hostsEvent(eventId: string): Promise<boolean> {
+  const team = await getCurrentTeam();
+  if (!team) return false;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("events")
+    .select("id")
+    .eq("id", eventId)
+    .eq("team_id", team.id)
+    .maybeSingle();
+
+  return Boolean(data);
+}
+
+/**
+ * The host writing down who turned up, a name per line.
+ *
+ * Most teams at a scrimmage have no account here and will not make one in the
+ * hall, so the register cannot wait for them. A name that matches a team on
+ * the hub is still only a name - linking the two would mean guessing, and a
+ * wrong guess puts another team's badge on the list.
+ */
+export async function addAttendanceNamesAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const eventId = text(formData, "event_id");
+  const keep = { values: formValues(formData) };
+
+  if (!eventId) return failure("Missing event id.", keep);
+  if (!(await hostsEvent(eventId))) {
+    return failure("Only the team hosting this event keeps its register.", keep);
+  }
+
+  const names = [
+    ...new Set(
+      text(formData, "names")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    ),
+  ];
+
+  if (names.length === 0) {
+    return failure("Write at least one team name.", {
+      ...keep,
+      field: "names",
+    });
+  }
+
+  const supabase = await createClient();
+  const profile = await getCurrentProfile();
+
+  // Already on the register is left alone rather than duplicated, so the host
+  // can paste the list again after adding a straggler.
+  const { data: existing } = await supabase
+    .from("event_attendance")
+    .select("name")
+    .eq("event_id", eventId)
+    .not("name", "is", null);
+
+  const taken = new Set(
+    ((existing ?? []) as { name: string | null }[])
+      .map((row) => (row.name ?? "").trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  const fresh = names.filter((name) => !taken.has(name.toLowerCase()));
+
+  if (fresh.length === 0) {
+    return success("Everyone on that list was already down.");
+  }
+
+  const { error } = await supabase.from("event_attendance").insert(
+    fresh.map((name) => ({
+      event_id: eventId,
+      name,
+      added_by: profile?.id ?? null,
+    })),
+  );
+
+  if (error) return failure(error.message, keep);
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/events");
+
+  return success(
+    `${fresh.length} ${fresh.length === 1 ? "team" : "teams"} marked as here.`,
+  );
+}
+
+export async function removeAttendanceAction(
+  formData: FormData,
+): Promise<void> {
+  const eventId = text(formData, "event_id");
+  const rowId = text(formData, "attendance_id");
+
+  if (!eventId || !rowId) return;
+  if (!(await hostsEvent(eventId))) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("event_attendance")
+    .delete()
+    .eq("id", rowId)
+    .eq("event_id", eventId);
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/events");
 }

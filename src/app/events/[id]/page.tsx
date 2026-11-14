@@ -24,6 +24,7 @@ import { TeamAvatar } from "@/components/team-avatar";
 import { headers } from "next/headers";
 
 import { AttendanceButton } from "@/components/attendance-button";
+import { AttendanceEditor } from "@/components/attendance-editor";
 import { EventQr } from "@/components/event-qr";
 import { Leaderboard } from "@/components/leaderboard";
 import { ScoreboardEditor } from "@/components/scoreboard-editor";
@@ -48,11 +49,12 @@ import {
   countOf,
   AUDIENCE_LABELS,
   type EventAudience,
+  type EventAttendance,
   type EventParticipant,
   type EventScorekeeper,
   PROGRAM_LABELS,
   type Program,
-  type TeamSummary,
+  attendeeName,
   teamHref,
 } from "@/lib/types";
 
@@ -203,7 +205,7 @@ export default async function EventPage({
       supabase
         .from("event_attendance")
         .select(
-          "team_id, created_at, team:teams(id, program, team_number, name, city, logo_url)",
+          "id, event_id, team_id, name, created_at, team:teams(id, program, team_number, name, city, logo_url)",
         )
         .eq("event_id", id)
         .order("created_at", { ascending: true }),
@@ -230,10 +232,7 @@ export default async function EventPage({
   const scorekeepers = (scorekeeperData ??
     []) as unknown as EventScorekeeper[];
 
-  const attendance = (attendanceData ?? []) as unknown as {
-    team_id: string;
-    team: TeamSummary | null;
-  }[];
+  const attendance = (attendanceData ?? []) as unknown as EventAttendance[];
   const goingCount = attendance.length;
   const weAreGoing = team
     ? attendance.some((row) => row.team_id === team.id)
@@ -434,6 +433,22 @@ export default async function EventPage({
             </section>
           ) : null}
 
+          {isOwner ? (
+            <section className="mt-12">
+              <h2 className="text-lg font-semibold">Who came</h2>
+              <p className="mt-1.5 text-sm text-fg-muted">
+                Teams on the hub mark themselves down. Write in everybody
+                else - they need no account for this.
+              </p>
+              <div className="card mt-5 p-5 sm:p-6">
+                <AttendanceEditor
+                  eventId={event.id}
+                  attendance={attendance}
+                />
+              </div>
+            </section>
+          ) : null}
+
           <section className="mt-12">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">
@@ -557,7 +572,7 @@ export default async function EventPage({
               <ul className="mt-4 space-y-2.5">
                 {attendance.map((row) =>
                   row.team ? (
-                    <li key={row.team_id}>
+                    <li key={row.id}>
                       <Link
                         href={teamHref(row.team)}
                         className="flex items-center gap-2 text-fg-muted transition-colors hover:text-fg"
@@ -570,7 +585,17 @@ export default async function EventPage({
                         <TeamTag team={row.team} className="text-xs" />
                       </Link>
                     </li>
-                  ) : null,
+                  ) : (
+                    <li
+                      key={row.id}
+                      className="flex items-center gap-2 text-fg-muted"
+                    >
+                      <TeamAvatar name={attendeeName(row)} size="sm" />
+                      <span className="truncate text-xs">
+                        {attendeeName(row)}
+                      </span>
+                    </li>
+                  ),
                 )}
               </ul>
             ) : (

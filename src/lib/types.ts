@@ -142,6 +142,24 @@ export interface TeamInvite {
   team?: TeamSummary | null;
 }
 
+/**
+ * A team at an event. Either one on the hub, or a name the host wrote down -
+ * most teams at a scrimmage have no account and will not make one on the day.
+ */
+export interface EventAttendance {
+  id: string;
+  event_id: string;
+  team_id: string | null;
+  name: string | null;
+  created_at: string;
+  team?: TeamSummary | null;
+}
+
+/** What to call a team on the register, account or not. */
+export function attendeeName(row: EventAttendance): string {
+  return row.team?.name ?? row.name ?? "A team";
+}
+
 /** Someone trusted to enter robot game scores at one event. */
 export interface EventScorekeeper {
   event_id: string;
