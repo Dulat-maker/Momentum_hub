@@ -268,7 +268,7 @@ export default async function PostPage({
                 href={`/login?next=/community/${post.id}`}
                 className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4"
               >
-                Log in with your team account
+                Log in
               </Link>{" "}
               to reply.
             </p>

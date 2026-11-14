@@ -524,7 +524,7 @@ export default async function EventPage({
                     href={`/login?next=/events/${event.id}`}
                     className="text-brand-mid underline decoration-brand-mid/40 underline-offset-4"
                   >
-                    Log in with your team account
+                    Log in
                   </Link>{" "}
                   to leave feedback and like this event.
                 </p>

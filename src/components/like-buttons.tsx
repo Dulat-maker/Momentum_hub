@@ -47,7 +47,7 @@ function LikeControl({
     return (
       <Link
         href={loginHref}
-        title="Log in with your team account to like this"
+        title="Log in and join a team to like this"
         className={`inline-flex items-center border border-line bg-panel-2 font-medium text-fg-muted transition-colors hover:border-brand/40 hover:text-fg ${shape}`}
       >
         <HeartIcon className={iconSize} />

@@ -9,7 +9,8 @@ import { text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
 import { isPostCategory } from "@/lib/types";
 
-const NOT_SIGNED_IN = "Log in with your team account to do that.";
+const NOT_SIGNED_IN =
+  "You have to be on a team to do that. Log in, then join or register one.";
 
 export async function createPostAction(
   _prev: ActionState,

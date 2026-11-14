@@ -15,7 +15,8 @@ import {
   isEventKind,
 } from "@/lib/types";
 
-const NOT_SIGNED_IN = "Log in with your team account to do that.";
+const NOT_SIGNED_IN =
+  "You have to be on a team to do that. Log in, then join or register one.";
 const CALENDAR_CLOSED =
   "The calendar is curated for now. Send the event to Momentum instead.";
 

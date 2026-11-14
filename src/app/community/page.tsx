@@ -151,11 +151,11 @@ export default async function CommunityPage({
             <div className="card p-5">
               <h2 className="font-semibold">Join in</h2>
               <p className="mt-2 text-sm text-fg-muted">
-                Posting, replying and liking need a team account. One account per
-                team - share it with your members.
+                Posting, replying and liking are done as a team, so you need an
+                account and a team to be on.
               </p>
               <Link href="/signup" className="btn btn-primary mt-4 w-full">
-                Register your team
+                Create an account
               </Link>
               <Link
                 href="/login?next=/community"
