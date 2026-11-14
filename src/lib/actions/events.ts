@@ -8,9 +8,16 @@ import { getCurrentTeam } from "@/lib/auth";
 import { localInputToIso } from "@/lib/datetime";
 import { optionalInteger, optionalText, text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
-import { isEventAudience, isEventFormat, isEventKind } from "@/lib/types";
+import {
+  canHostEvents,
+  isEventAudience,
+  isEventFormat,
+  isEventKind,
+} from "@/lib/types";
 
 const NOT_SIGNED_IN = "Log in with your team account to do that.";
+const CALENDAR_CLOSED =
+  "The calendar is curated for now. Send the event to Momentum instead.";
 
 type EventPayload = {
   title: string;
@@ -103,6 +110,12 @@ export async function createEventAction(
 ): Promise<ActionState> {
   const team = await getCurrentTeam();
   if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
+
+  // The database refuses this too; saying so here spares the team a form
+  // full of work and a policy error for an answer.
+  if (!canHostEvents(team)) {
+    return failure(CALENDAR_CLOSED, { values: formValues(formData) });
+  }
 
   const parsed = readEventPayload(formData);
   if ("error" in parsed) {

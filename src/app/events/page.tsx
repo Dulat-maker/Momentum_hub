@@ -16,7 +16,7 @@ import {
 } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import { type EventWithTeam, isProgram } from "@/lib/types";
+import { canHostEvents, type EventWithTeam, isProgram } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -97,8 +97,8 @@ export default async function EventsPage({
           <p className="eyebrow">What is on</p>
           <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Events</h1>
           <p className="mt-2 max-w-xl text-fg-muted">
-            Scrimmages, workshops, outreach days and meetups - all posted by
-            teams themselves.
+            Scrimmages, workshops, outreach days and meetups - everything the
+            FTC and FLL teams here are running.
           </p>
           <p className="mt-3 max-w-xl text-sm text-fg-dim">
             Rather not check back?{" "}
@@ -113,10 +113,12 @@ export default async function EventsPage({
           </p>
         </div>
 
-        <Link href={team ? "/events/new" : "/login?next=/events/new"} className="btn btn-primary">
-          <PlusIcon className="size-4" />
-          Add an event
-        </Link>
+        {canHostEvents(team) ? (
+          <Link href="/events/new" className="btn btn-primary">
+            <PlusIcon className="size-4" />
+            Add an event
+          </Link>
+        ) : null}
       </div>
 
       <div className="mt-8">
@@ -144,12 +146,22 @@ export default async function EventsPage({
               : "No events match these filters"
           }
           body={
-            filters.when === "upcoming"
-              ? "Be the first team to put something on the calendar - a scrimmage, a workshop, even a casual build day."
-              : "Try widening the filters, or look at all dates."
+            filters.when !== "upcoming"
+              ? "Try widening the filters, or look at all dates."
+              : canHostEvents(team)
+                ? "Put something on the calendar - a scrimmage, a workshop, even a casual build day."
+                : "Momentum adds events as they are confirmed. Register your team and you will see them here."
           }
-          actionLabel={team ? "Add an event" : "Register your team"}
-          actionHref={team ? "/events/new" : "/signup"}
+          actionLabel={
+            canHostEvents(team)
+              ? "Add an event"
+              : team
+                ? undefined
+                : "Register your team"
+          }
+          actionHref={
+            canHostEvents(team) ? "/events/new" : team ? undefined : "/signup"
+          }
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">

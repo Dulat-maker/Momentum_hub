@@ -33,6 +33,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import {
   type AggregateCount,
+  canHostEvents,
   CATEGORY_LABELS,
   type OutreachEntry,
   type PostRow,
@@ -177,10 +178,12 @@ export default async function DashboardPage({
             Public page
             <ArrowUpRightIcon className="size-4" />
           </Link>
-          <Link href="/events/new" className="btn btn-primary btn-sm">
-            <PlusIcon className="size-4" />
-            Add event
-          </Link>
+          {canHostEvents(team) ? (
+            <Link href="/events/new" className="btn btn-primary btn-sm">
+              <PlusIcon className="size-4" />
+              Add event
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -236,11 +239,20 @@ export default async function DashboardPage({
 
         {events.length === 0 ? (
           <p className="mt-4 text-sm text-fg-dim">
-            Nothing posted yet.{" "}
-            <Link href="/events/new" className="text-brand-mid underline underline-offset-4">
-              Add your first event
-            </Link>
-            .
+            {canHostEvents(team) ? (
+              <>
+                Nothing posted yet.{" "}
+                <Link
+                  href="/events/new"
+                  className="text-brand-mid underline underline-offset-4"
+                >
+                  Add your first event
+                </Link>
+                .
+              </>
+            ) : (
+              "Momentum is putting the events on the hub for now."
+            )}
           </p>
         ) : (
           <div className="mt-5 space-y-3">

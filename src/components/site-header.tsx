@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { signOutAction } from "@/lib/actions/auth";
 import { getCurrentTeam } from "@/lib/auth";
+import { canHostEvents } from "@/lib/types";
 
 import { LogOutIcon, LogoMark, PlusIcon } from "./icons";
 import { NavLink } from "./nav-link";
@@ -38,13 +39,15 @@ export async function SiteHeader() {
         <div className="ml-auto flex items-center gap-2">
           {team ? (
             <>
-              <Link
-                href="/events/new"
-                className="btn btn-outline btn-sm hidden sm:inline-flex"
-              >
-                <PlusIcon className="size-4" />
-                Add event
-              </Link>
+              {canHostEvents(team) ? (
+                <Link
+                  href="/events/new"
+                  className="btn btn-outline btn-sm hidden sm:inline-flex"
+                >
+                  <PlusIcon className="size-4" />
+                  Add event
+                </Link>
+              ) : null}
               <Link
                 href="/dashboard"
                 className="flex max-w-50 items-center gap-2 rounded-xl border border-line px-2 py-1.5 transition-colors hover:bg-panel-2"
@@ -85,7 +88,7 @@ export async function SiteHeader() {
             {link.label}
           </NavLink>
         ))}
-        {team ? (
+        {canHostEvents(team) ? (
           <NavLink href="/events/new">Add event</NavLink>
         ) : null}
       </nav>

@@ -50,7 +50,24 @@ export interface Team extends TeamSummary {
   instagram: string | null;
   contact_email: string | null;
   rookie_year: number | null;
+  /** Set per team in SQL. Undefined until the curated-events migration
+      has run, which reads as "cannot host" - the safe default. */
+  can_host_events?: boolean;
   created_at: string;
+}
+
+/**
+ * Whether a team may put an event on the hub.
+ *
+ * The calendar is curated for now, so this is false for every team until
+ * `can_host_events` is set on its row:
+ *
+ *   update public.teams set can_host_events = true where team_number = 38157;
+ */
+export function canHostEvents(
+  team: { can_host_events?: boolean } | null | undefined,
+): boolean {
+  return team?.can_host_events === true;
 }
 
 export interface EventParticipant {

@@ -185,17 +185,17 @@ export default async function HomePage() {
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-fg-muted">
-            One account per team. Publish your events, see what is happening in
+            One account per team. Follow the events, see what is happening in
             other cities, and talk to the teams you will be standing next to at
             the next competition.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href={signedIn ? "/events/new" : "/signup"}
+              href={signedIn ? "/dashboard" : "/signup"}
               className="btn btn-primary"
             >
-              {signedIn ? "Add an event" : "Register your team"}
+              {signedIn ? "Your team" : "Register your team"}
               <ArrowRightIcon className="size-4" />
             </Link>
             <Link href="/events" className="btn btn-outline">

@@ -54,6 +54,8 @@ create table if not exists public.teams (
   instagram     text,
   contact_email text,
   rookie_year   integer check (rookie_year is null or rookie_year between 1990 and 2100),
+  -- Teams do not post their own events for now; see the events policies.
+  can_host_events boolean not null default false,
   created_at    timestamptz not null default now()
 );
 
@@ -140,6 +142,24 @@ create table if not exists public.event_feedback (
 );
 
 create index if not exists event_feedback_event_idx on public.event_feedback (event_id);
+
+-- --------------------------------------------------- event scoreboard ----
+-- Three rounds with the best one counting, which is how the Robot Game is
+-- scored. Participants are free text: most teams at a scrimmage have no
+-- account here, and the board should not wait for them to make one.
+create table if not exists public.event_participants (
+  id         uuid primary key default gen_random_uuid(),
+  event_id   uuid not null references public.events (id) on delete cascade,
+  team_id    uuid references public.teams (id) on delete set null,
+  name       text not null check (char_length(trim(name)) > 0),
+  round_1    integer check (round_1 is null or round_1 >= 0),
+  round_2    integer check (round_2 is null or round_2 >= 0),
+  round_3    integer check (round_3 is null or round_3 >= 0),
+  created_at timestamptz not null default now(),
+  unique (event_id, name)
+);
+create index if not exists event_participants_event_idx
+  on public.event_participants (event_id);
 
 -- ----------------------------------------------------- community: posts ----
 create table if not exists public.posts (
@@ -251,6 +271,7 @@ alter table public.events         enable row level security;
 alter table public.event_likes    enable row level security;
 alter table public.event_attendance enable row level security;
 alter table public.event_feedback enable row level security;
+alter table public.event_participants enable row level security;
 alter table public.posts          enable row level security;
 alter table public.post_comments  enable row level security;
 alter table public.post_likes     enable row level security;
@@ -283,10 +304,31 @@ drop policy if exists "events readable by everyone" on public.events;
 create policy "events readable by everyone"
   on public.events for select using (true);
 
+-- Putting an event on the hub needs the host flag. Only insert does: a team
+-- that already has an event keeps being able to fix or withdraw it, so
+-- clearing the flag cannot strand an event with nobody able to touch it.
 drop policy if exists "team manages own events" on public.events;
-create policy "team manages own events"
-  on public.events for all
+
+drop policy if exists "host adds events" on public.events;
+create policy "host adds events"
+  on public.events for insert
+  with check (
+    auth.uid() = team_id
+    and exists (
+      select 1 from public.teams t
+      where t.id = auth.uid() and t.can_host_events
+    )
+  );
+
+drop policy if exists "team updates own events" on public.events;
+create policy "team updates own events"
+  on public.events for update
   using (auth.uid() = team_id) with check (auth.uid() = team_id);
+
+drop policy if exists "team deletes own events" on public.events;
+create policy "team deletes own events"
+  on public.events for delete
+  using (auth.uid() = team_id);
 
 -- event_likes -------------------------------------------------------------
 drop policy if exists "likes readable by everyone" on public.event_likes;
@@ -312,6 +354,29 @@ create policy "team manages own attendance"
 drop policy if exists "feedback readable by everyone" on public.event_feedback;
 create policy "feedback readable by everyone"
   on public.event_feedback for select using (true);
+
+-- event_participants ------------------------------------------------------
+drop policy if exists "scores readable by everyone" on public.event_participants;
+create policy "scores readable by everyone"
+  on public.event_participants for select using (true);
+
+-- Only the team hosting the event keeps the scores, not every team taking
+-- part in it.
+drop policy if exists "host manages the scoreboard" on public.event_participants;
+create policy "host manages the scoreboard"
+  on public.event_participants for all
+  using (
+    exists (
+      select 1 from public.events e
+      where e.id = event_participants.event_id and e.team_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.events e
+      where e.id = event_participants.event_id and e.team_id = auth.uid()
+    )
+  );
 
 drop policy if exists "team manages own feedback" on public.event_feedback;
 create policy "team manages own feedback"
