@@ -16,11 +16,11 @@ type Bolt = {
 };
 
 const BOLTS: Bolt[] = [
-  { top: "8%", left: "-6%", width: "46vw", rotate: -7, opacity: 0.22 },
-  { top: "27%", left: "52%", width: "56vw", rotate: 5, opacity: 0.14 },
-  { top: "48%", left: "-12%", width: "38vw", rotate: 4, opacity: 0.1, flip: true },
-  { top: "66%", left: "40%", width: "62vw", rotate: -4, opacity: 0.17 },
-  { top: "86%", left: "-4%", width: "44vw", rotate: 6, opacity: 0.12, flip: true },
+  { top: "6%", left: "-18%", width: "125vw", rotate: -5, opacity: 0.38 },
+  { top: "24%", left: "-5%", width: "95vw", rotate: 4, opacity: 0.24, flip: true },
+  { top: "44%", left: "-30%", width: "135vw", rotate: 3, opacity: 0.3 },
+  { top: "63%", left: "-10%", width: "110vw", rotate: -4, opacity: 0.26, flip: true },
+  { top: "82%", left: "-22%", width: "128vw", rotate: 5, opacity: 0.32 },
 ];
 
 /** A single streak: a zigzag that travels left to right, not a struck bolt. */
@@ -39,12 +39,16 @@ function Bolt({
       style={style}
       aria-hidden="true"
     >
+      {/* non-scaling-stroke: the bolts are stretched well past the viewport,
+          which would otherwise scale the line with them and turn thin
+          lightning into fat ribbons. */}
       <path
         d="M2 30 L74 14 L54 32 L142 10 L118 30 L206 12 L180 32 L268 14 L246 30 L318 18"
         stroke="var(--color-volt)"
-        strokeWidth="2.5"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );
@@ -71,7 +75,7 @@ export function SiteLightning({
             opacity: bolt.opacity,
             transform: `rotate(${bolt.rotate}deg)${bolt.flip ? " scaleX(-1)" : ""}`,
             filter:
-              "drop-shadow(0 0 14px color-mix(in oklch, var(--color-volt) 55%, transparent))",
+              "drop-shadow(0 0 18px color-mix(in oklch, var(--color-volt) 70%, transparent))",
           }}
         />
       ))}
