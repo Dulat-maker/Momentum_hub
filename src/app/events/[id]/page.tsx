@@ -379,6 +379,7 @@ export default async function EventPage({
               going={weAreGoing}
               count={goingCount}
               canRespond={Boolean(team)}
+              signedIn={Boolean(profile)}
               capacity={event.capacity}
               past={past}
             />

@@ -14,14 +14,18 @@ export function AttendanceButton({
   going,
   count,
   canRespond,
+  signedIn,
   capacity,
   past,
 }: {
   eventId: string;
   going: boolean;
   count: number;
+  /** On a team, so there is somebody to put the mark under. */
   canRespond: boolean;
+  signedIn?: boolean;
   capacity?: number | null;
+  /** The event has started. It can still be marked - that is the point. */
   past?: boolean;
 }) {
   const [state, flip] = useOptimistic<State, null>({ going, count }, (current) => ({
@@ -30,26 +34,29 @@ export function AttendanceButton({
   }));
   const [, startTransition] = useTransition();
 
-  if (past) {
-    return (
-      <span className="chip">
-        <UsersIcon className="size-3.5" />
-        {state.count} came
-      </span>
-    );
-  }
-
   if (!canRespond) {
-    return (
+    // Attendance is a team saying it was there, so somebody signed in without
+    // a team has nothing to put their mark under yet.
+    return signedIn ? (
+      <Link href="/dashboard" className="btn btn-outline">
+        <UsersIcon className="size-4" />
+        Join a team to mark it down
+      </Link>
+    ) : (
       <Link href={`/login?next=/events/${eventId}`} className="btn btn-outline">
         <UsersIcon className="size-4" />
-        Log in to join
+        Log in to mark your team down
       </Link>
     );
   }
 
+  // Capacity limits who signs up beforehand. Once the day comes, a team that
+  // turned up turned up, whatever the spots said.
   const full =
-    typeof capacity === "number" && !state.going && state.count >= capacity;
+    !past &&
+    typeof capacity === "number" &&
+    !state.going &&
+    state.count >= capacity;
 
   if (full) {
     return (
@@ -77,12 +84,12 @@ export function AttendanceButton({
       {state.going ? (
         <>
           <CheckIcon className="size-4" />
-          We are going
+          {past ? "We were here" : "We are going"}
         </>
       ) : (
         <>
           <UsersIcon className="size-4" />
-          Count us in
+          {past ? "Mark us as here" : "Count us in"}
         </>
       )}
     </button>
