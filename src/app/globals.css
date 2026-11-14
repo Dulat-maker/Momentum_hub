@@ -25,6 +25,10 @@
   --color-brand-mid: #a67dda;
   --color-brand-soft: #cbaef1;
 
+  /* The one non-violet accent: electric lime, used only for the lightning
+     running behind the page. */
+  --color-volt: #a2ff2c;
+
   --color-success: #4ad991;
   --color-warn: #ffc857;
 
@@ -56,7 +60,8 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-color: var(--color-canvas);
+    /* No background colour here: body already paints the canvas, and an
+       opaque layer would hide the lightning sitting behind this one. */
     background-image:
       radial-gradient(
         circle at 50% 38%,

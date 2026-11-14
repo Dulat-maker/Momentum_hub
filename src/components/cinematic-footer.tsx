@@ -6,6 +6,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import { ArrowRightIcon, LogoMark } from "./icons";
+import { SiteLightning } from "./site-lightning";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -310,6 +311,10 @@ export function CinematicFooter() {
             aria-hidden="true"
             className="momentum-footer-grid pointer-events-none absolute inset-0 z-0"
           />
+
+          {/* The footer paints its own background over the page, so the
+              lightning has to be drawn again inside it. */}
+          <SiteLightning className="z-0" />
 
           <div
             ref={giantRef}

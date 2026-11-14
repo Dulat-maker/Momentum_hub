@@ -3,6 +3,7 @@ import { Fredoka, Geist } from "next/font/google";
 
 import { SiteFooterSlot } from "@/components/site-footer-slot";
 import { SiteHeader } from "@/components/site-header";
+import { SiteLightning } from "@/components/site-lightning";
 
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${fredoka.variable} h-full`}
     >
       <body className="flex min-h-full flex-col antialiased">
+        <SiteLightning className="-z-10" />
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooterSlot />
