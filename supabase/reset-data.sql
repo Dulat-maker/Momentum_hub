@@ -31,14 +31,22 @@ delete from auth.users u
  where not exists (select 1 from public.teams t where t.id = u.id);
 
 -- Uploads live in storage, which the cascade does not reach, so a logo or
--- cover would outlive the team that owned it. Each file sits in a folder named
--- after its team, so anything whose folder no longer matches a team is loose.
-delete from storage.objects
- where bucket_id in ('team-logos', 'event-covers')
-   and not exists (
-     select 1 from public.teams t
-      where t.id::text = (storage.foldername(name))[1]
-   );
+-- cover outlives the team that owned it. They cannot be removed from here:
+-- Supabase refuses a direct delete from storage.objects ("Direct deletion from
+-- storage tables is not allowed") and an orphan has to go through the Storage
+-- tab in the dashboard, or the Storage API.
+--
+-- Each file sits in a folder named after its team, so a folder with no team
+-- behind it is an orphan. Run this on its own to see whether there are any -
+-- both buckets were empty when this was written, so most likely not:
+--
+--   select o.bucket_id, o.name
+--     from storage.objects o
+--    where o.bucket_id in ('team-logos', 'event-covers')
+--      and not exists (
+--        select 1 from public.teams t
+--         where t.id::text = (storage.foldername(o.name))[1]
+--      );
 
 -- What is left. The six teams coming to the scrimmage are not accounts yet,
 -- so nothing of theirs is touched by any of the above.
