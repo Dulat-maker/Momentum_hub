@@ -15,6 +15,7 @@ import {
 } from "@/components/icons";
 import { PostCard } from "@/components/post-card";
 import { SetupNotice } from "@/components/setup-notice";
+import { Podium } from "@/components/podium";
 import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
 import {
   EVENT_CARD_SELECT,
@@ -25,7 +26,11 @@ import {
 } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import type { EventWithTeam, PostWithTeam } from "@/lib/types";
+import type {
+  EventParticipant,
+  EventWithTeam,
+  PostWithTeam,
+} from "@/lib/types";
 
 const FEATURES = [
   {
@@ -63,18 +68,28 @@ export default async function HomePage() {
   let likedPosts = new Set<string>();
   let signedIn = false;
   let hasTeam = false;
+  // Between events there is nothing upcoming, and a home page that simply
+  // drops its calendar section reads as a site nobody is using.
+  let showingPast = false;
+  let podium: EventParticipant[] = [];
 
   if (configured) {
     const supabase = await createClient();
     const nowIso = new Date().toISOString();
 
-    const [eventRes, postRes, profile, team] = await Promise.all([
+    const [eventRes, pastRes, postRes, profile, team] = await Promise.all([
       supabase
         .from("events")
         .select(EVENT_CARD_SELECT)
         .gte("starts_at", nowIso)
         .order("starts_at", { ascending: true })
         .limit(4),
+      supabase
+        .from("events")
+        .select(EVENT_CARD_SELECT)
+        .lt("starts_at", nowIso)
+        .order("starts_at", { ascending: false })
+        .limit(2),
       supabase
         .from("posts")
         .select(POST_CARD_SELECT)
@@ -85,6 +100,24 @@ export default async function HomePage() {
     ]);
 
     events = (eventRes.data ?? []) as unknown as EventWithTeam[];
+
+    if (events.length === 0) {
+      events = (pastRes.data ?? []) as unknown as EventWithTeam[];
+      showingPast = events.length > 0;
+
+      // The result of the last event is the most interesting thing the hub
+      // holds once the day is over, and the one thing worth coming back for.
+      if (showingPast) {
+        const { data: scoreRows } = await supabase
+          .from("event_participants")
+          .select(
+            "id, event_id, team_id, name, round_1, round_2, round_3, created_at",
+          )
+          .eq("event_id", events[0].id);
+
+        podium = (scoreRows ?? []) as unknown as EventParticipant[];
+      }
+    }
     posts = (postRes.data ?? []) as unknown as PostWithTeam[];
     signedIn = Boolean(profile);
     hasTeam = Boolean(team);
@@ -261,24 +294,49 @@ export default async function HomePage() {
         <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="eyebrow">Coming up</p>
-              <h2 className="section-title mt-2">Next on the calendar</h2>
+              <p className="eyebrow">
+                {showingPast ? "Just happened" : "Coming up"}
+              </p>
+              <h2 className="section-title mt-2">
+                {showingPast
+                  ? "The last time everyone met"
+                  : "Next on the calendar"}
+              </h2>
             </div>
-            <Link href="/events" className="btn btn-outline btn-sm">
-              All events
+            <Link
+              href={showingPast ? "/events?when=past" : "/events"}
+              className="btn btn-outline btn-sm"
+            >
+              {showingPast ? "All of them" : "All events"}
               <ArrowRightIcon className="size-4" />
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-4 lg:grid-cols-2">
-            {events.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                liked={likedEvents.has(event.id)}
-                canLike={hasTeam}
+          <div
+            className={`mt-8 grid gap-4 ${
+              showingPast && podium.length > 0
+                ? "lg:grid-cols-[1fr_minmax(0,320px)]"
+                : "lg:grid-cols-2"
+            }`}
+          >
+            <div className="grid gap-4">
+              {events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  liked={likedEvents.has(event.id)}
+                  canLike={hasTeam}
+                />
+              ))}
+            </div>
+
+            {showingPast && podium.length > 0 ? (
+              <Podium
+                eventId={events[0].id}
+                eventTitle={events[0].title}
+                participants={podium}
               />
-            ))}
+            ) : null}
           </div>
         </section>
       ) : null}

@@ -14,7 +14,7 @@ export function SiteFooter() {
             </span>
           </div>
           <p className="mt-3 text-sm text-fg-muted">
-            A shared home base for FTC and FLL teams: one account per team,
+            A shared home base for FTC and FLL teams: your own account,
             every event in one list, and a place to actually talk to each other.
           </p>
         </div>

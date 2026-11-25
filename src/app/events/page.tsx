@@ -81,14 +81,25 @@ export default async function EventsPage({
     );
   }
 
-  const [{ data, error }, cities, team] = await Promise.all([
+  const [{ data, error }, cities, team, pastRes] = await Promise.all([
     query.limit(100),
     eventCities(),
     getCurrentTeam(),
+    supabase
+      .from("events")
+      .select("id", { count: "exact", head: true })
+      .lt("starts_at", nowIso),
   ]);
 
   const liked = await likedEventIds(team?.id);
   const events = (data ?? []) as unknown as EventWithTeam[];
+
+  // An empty calendar reads as a dead site when there are finished events
+  // sitting behind it with results on them.
+  const offerThePast =
+    filters.when === "upcoming" &&
+    events.length === 0 &&
+    (pastRes.count ?? 0) > 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
@@ -148,19 +159,29 @@ export default async function EventsPage({
           body={
             filters.when !== "upcoming"
               ? "Try widening the filters, or look at all dates."
-              : canHostEvents(team)
-                ? "Put something on the calendar - a scrimmage, a workshop, even a casual build day."
-                : "Momentum adds events as they are confirmed. Register your team and you will see them here."
+              : offerThePast
+                ? "Nothing on the calendar right now. What has already run is still here, results and all."
+                : canHostEvents(team)
+                  ? "Put something on the calendar - a scrimmage, a workshop, even a casual build day."
+                  : "Momentum adds events as they are confirmed. Make an account and you will see them here."
           }
           actionLabel={
-            canHostEvents(team)
-              ? "Add an event"
-              : team
-                ? undefined
-                : "Register your team"
+            offerThePast
+              ? "See what has already happened"
+              : canHostEvents(team)
+                ? "Add an event"
+                : team
+                  ? undefined
+                  : "Create an account"
           }
           actionHref={
-            canHostEvents(team) ? "/events/new" : team ? undefined : "/signup"
+            offerThePast
+              ? "/events?when=past"
+              : canHostEvents(team)
+                ? "/events/new"
+                : team
+                  ? undefined
+                  : "/signup"
           }
         />
       ) : (

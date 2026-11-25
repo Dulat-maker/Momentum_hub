@@ -125,7 +125,7 @@ const MARQUEE_PHRASES = [
   "Stay in motion. Stay in momentum",
   "Every scrimmage in one place",
   "Workshops and outreach days",
-  "One account per team",
+  "Your own account, your team",
   "Honest feedback after the event",
   "Find your alliance partner",
 ];
@@ -345,7 +345,7 @@ export function CinematicFooter() {
                   href="/signup"
                   className="px-9 py-4 text-sm font-semibold text-fg md:text-base"
                 >
-                  Register your team
+                  Create an account
                   <ArrowRightIcon className="size-4" />
                 </MagneticPill>
 

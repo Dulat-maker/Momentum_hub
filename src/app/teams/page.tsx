@@ -193,7 +193,7 @@ export default async function TeamsPage({
           icon={<UsersIcon className="size-6" />}
           title="No teams found"
           body="Nobody matches that search yet. If your team is missing, register it - it takes a minute."
-          actionLabel="Register your team"
+          actionLabel="Create an account"
           actionHref="/signup"
         />
       ) : (

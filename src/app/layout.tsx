@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Momentum Hub",
   },
   description:
-    "One account per team, FTC or FLL: publish your events, find scrimmages and workshops near you, and talk to the other teams.",
+    "Where FTC and FLL teams in Kazakhstan keep their scrimmages, workshops and results - one calendar, one place to find the other teams.",
 };
 
 export default function RootLayout({

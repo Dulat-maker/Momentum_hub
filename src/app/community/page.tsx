@@ -117,9 +117,9 @@ export default async function CommunityPage({
                 body={
                   team
                     ? "Start it off - ask the question your team is stuck on, or show what you built this season."
-                    : "Register your team to post the first question."
+                    : "Make an account and join a team to post the first question."
                 }
-                actionLabel={team ? undefined : "Register your team"}
+                actionLabel={team ? undefined : "Create an account"}
                 actionHref={team ? undefined : "/signup"}
               />
             ) : (
