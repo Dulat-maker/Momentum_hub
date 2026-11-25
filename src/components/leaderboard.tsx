@@ -1,4 +1,6 @@
-import { type EventParticipant, bestRound } from "@/lib/types";
+import Link from "next/link";
+
+import { type EventParticipant, bestRound, teamHref } from "@/lib/types";
 
 import { TrophyIcon } from "./icons";
 
@@ -67,7 +69,18 @@ export function Leaderboard({
                   )}
                 </td>
 
-                <td className="px-4 py-3 font-medium">{entry.name}</td>
+                <td className="px-4 py-3 font-medium">
+                  {entry.team ? (
+                    <Link
+                      href={teamHref(entry.team)}
+                      className="transition-colors hover:text-brand-mid"
+                    >
+                      {entry.name}
+                    </Link>
+                  ) : (
+                    entry.name
+                  )}
+                </td>
 
                 {[entry.round_1, entry.round_2, entry.round_3].map(
                   (score, round) => (

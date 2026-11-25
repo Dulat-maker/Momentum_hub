@@ -81,6 +81,9 @@ export interface EventParticipant {
   round_2: number | null;
   round_3: number | null;
   created_at: string;
+  /** Set by a scorekeeper when the name on the board is a team here.
+      Most are not: a scrimmage is full of teams with no account. */
+  team?: TeamSummary | null;
 }
 
 /** The Robot Game counts a team's best round, not the sum. */

@@ -8,7 +8,12 @@ import {
   removeParticipantAction,
   saveScoresAction,
 } from "@/lib/actions/scores";
-import { type EventParticipant, bestRound } from "@/lib/types";
+import {
+  type EventParticipant,
+  PROGRAM_LABELS,
+  type TeamSummary,
+  bestRound,
+} from "@/lib/types";
 
 import { ErrorAlert, SuccessAlert } from "./alert";
 import { PlusIcon, TrashIcon } from "./icons";
@@ -17,9 +22,12 @@ import { IconSubmitButton, SubmitButton } from "./submit-button";
 export function ScoreboardEditor({
   eventId,
   participants,
+  teams,
 }: {
   eventId: string;
   participants: EventParticipant[];
+  /** Teams on the hub, to tie a name on the board to one of them. */
+  teams: TeamSummary[];
 }) {
   const [addState, addAction] = useActionState(
     addParticipantsAction,
@@ -71,7 +79,7 @@ export function ScoreboardEditor({
           <SuccessAlert message={saveState.success} />
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-sm">
+            <table className="w-full min-w-[32rem] text-sm">
               <thead>
                 <tr className="text-left text-xs tracking-wider text-fg-dim uppercase">
                   <th className="py-2 pr-3 font-medium">Team</th>
@@ -85,10 +93,30 @@ export function ScoreboardEditor({
               <tbody>
                 {participants.map((entry) => (
                   <tr key={entry.id} className="border-t border-line">
-                    <td className="py-2 pr-3 font-medium">{entry.name}</td>
+                    <td className="min-w-44 py-2 pr-3 align-top">
+                      <p className="font-medium">{entry.name}</p>
+
+                      {/* Optional on purpose: most teams at a scrimmage have
+                          no account here, and a board that insists on one
+                          cannot record them. */}
+                      <select
+                        name={`link-${entry.id}`}
+                        defaultValue={entry.team_id ?? ""}
+                        aria-label={`Which team on the hub is ${entry.name}?`}
+                        className="input mt-1.5 px-2 py-1 text-xs"
+                      >
+                        <option value="">Not on the hub</option>
+                        {teams.map((team) => (
+                          <option key={team.id} value={team.id}>
+                            {PROGRAM_LABELS[team.program]} #{team.team_number}{" "}
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
 
                     {([1, 2, 3] as const).map((round) => (
-                      <td key={round} className="px-1 py-2">
+                      <td key={round} className="px-1 py-2 align-top">
                         <input
                           type="number"
                           min={0}
@@ -100,11 +128,11 @@ export function ScoreboardEditor({
                       </td>
                     ))}
 
-                    <td className="px-1 py-2 text-right font-semibold tabular-nums">
+                    <td className="px-1 py-2 text-right align-top font-semibold tabular-nums">
                       {bestRound(entry) ?? "—"}
                     </td>
 
-                    <td className="py-2 text-right">
+                    <td className="py-2 text-right align-top">
                       {/* Its own form: a nested one would submit the scores. */}
                       <span className="inline-block">
                         <IconSubmitButton
@@ -121,6 +149,11 @@ export function ScoreboardEditor({
               </tbody>
             </table>
           </div>
+
+          <p className="text-xs text-fg-dim">
+            Tying a name to a team on the hub puts this result on that team&apos;s
+            own page.
+          </p>
 
           <SubmitButton pendingLabel="Saving...">Save scores</SubmitButton>
         </form>

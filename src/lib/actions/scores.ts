@@ -94,12 +94,27 @@ export async function saveScoresAction(
 
   const supabase = await createClient();
 
-  // Inputs come in as score-<participant id>-<round>.
-  const byParticipant = new Map<string, Record<string, number | null>>();
+  // Inputs come in as score-<participant id>-<round> and link-<id>.
+  const byParticipant = new Map<
+    string,
+    Record<string, number | string | null>
+  >();
 
   for (const [key, value] of formData.entries()) {
+    if (typeof value !== "string") continue;
+
+    const link = /^link-(.+)$/.exec(key);
+    if (link) {
+      const row = byParticipant.get(link[1]) ?? {};
+      // Empty means the name belongs to no team on the hub, which is the
+      // normal case and has to stay sayable.
+      row.team_id = value === "" ? null : value;
+      byParticipant.set(link[1], row);
+      continue;
+    }
+
     const match = /^score-(.+)-([123])$/.exec(key);
-    if (!match || typeof value !== "string") continue;
+    if (!match) continue;
 
     const [, participantId, round] = match;
     const trimmed = value.trim();
@@ -127,6 +142,8 @@ export async function saveScoresAction(
   }
 
   revalidatePath(`/events/${eventId}`);
+  // A linked row shows up on that team's own page.
+  revalidatePath("/teams", "layout");
 
   return success("Scores saved.");
 }

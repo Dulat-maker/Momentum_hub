@@ -12,9 +12,11 @@ import {
   MessageIcon,
   PencilIcon,
   SparkIcon,
+  TrophyIcon,
   UsersIcon,
 } from "@/components/icons";
 import { SetupNotice } from "@/components/setup-notice";
+import { rankParticipants } from "@/components/leaderboard";
 import { TeamAvatar } from "@/components/team-avatar";
 import { getCurrentTeam } from "@/lib/auth";
 import {
@@ -28,6 +30,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import {
   CATEGORY_LABELS,
+  type EventParticipant,
   type EventWithTeam,
   PROGRAM_FULL_NAMES,
   PROGRAM_LABELS,
@@ -36,6 +39,7 @@ import {
   type Program,
   type Team,
   type TeamMember,
+  bestRound,
   isProgram,
 } from "@/lib/types";
 
@@ -146,6 +150,49 @@ export default async function TeamProfilePage({
   ]);
 
   const members = (memberRes.data ?? []) as unknown as TeamMember[];
+
+  const { data: ownScoreRows } = await supabase
+    .from("event_participants")
+    .select(
+      "id, event_id, team_id, name, round_1, round_2, round_3, created_at, event:events(id, title, starts_at, city)",
+    )
+    .eq("team_id", team.id);
+
+  const ownScores = (ownScoreRows ?? []) as unknown as (EventParticipant & {
+    event: { id: string; title: string; starts_at: string; city: string | null } | null;
+  })[];
+
+  // A place only means something against the rest of that event's board.
+  const placeByParticipant = new Map<string, number>();
+
+  if (ownScores.length > 0) {
+    const { data: boardRows } = await supabase
+      .from("event_participants")
+      .select(
+        "id, event_id, team_id, name, round_1, round_2, round_3, created_at",
+      )
+      .in(
+        "event_id",
+        [...new Set(ownScores.map((row) => row.event_id))],
+      );
+
+    const byEvent = new Map<string, EventParticipant[]>();
+    for (const row of (boardRows ?? []) as unknown as EventParticipant[]) {
+      byEvent.set(row.event_id, [...(byEvent.get(row.event_id) ?? []), row]);
+    }
+
+    for (const [, board] of byEvent) {
+      rankParticipants(board).forEach((row, index) => {
+        if (bestRound(row) !== null) placeByParticipant.set(row.id, index + 1);
+      });
+    }
+  }
+
+  const results = ownScores
+    .filter((row) => bestRound(row) !== null)
+    .sort((a, b) =>
+      (b.event?.starts_at ?? "").localeCompare(a.event?.starts_at ?? ""),
+    );
   const outreach = (outreachRes.data ?? []) as unknown as OutreachEntry[];
 
   const outreachHours = outreach.reduce(
@@ -303,6 +350,61 @@ export default async function TeamProfilePage({
           </div>
         )}
       </section>
+
+      {results.length > 0 ? (
+        <section className="mt-12">
+          <h2 className="section-title flex items-center gap-2 text-xl sm:text-2xl">
+            <TrophyIcon className="size-5 text-fg-dim" />
+            Robot game
+            <span className="text-sm font-normal text-fg-dim">
+              {results.length}
+            </span>
+          </h2>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {results.map((row) => {
+              const place = placeByParticipant.get(row.id);
+
+              return (
+                <Link
+                  key={row.id}
+                  href={`/events/${row.event_id}`}
+                  className="card p-4 transition-colors hover:border-line-strong"
+                >
+                  <p className="truncate text-sm font-medium">
+                    {row.event?.title ?? "An event"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-fg-dim">
+                    {row.event ? formatDate(row.event.starts_at) : null}
+                    {row.event?.city ? ` · ${row.event.city}` : ""}
+                  </p>
+
+                  <div className="mt-4 flex items-end gap-6">
+                    <div>
+                      <p className="text-xs tracking-wider text-fg-dim uppercase">
+                        Best
+                      </p>
+                      <p className="font-display mt-1 text-2xl font-semibold">
+                        {bestRound(row)}
+                      </p>
+                    </div>
+                    {place ? (
+                      <div>
+                        <p className="text-xs tracking-wider text-fg-dim uppercase">
+                          Place
+                        </p>
+                        <p className="font-display mt-1 text-2xl font-semibold">
+                          {place}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-12">
         <h2 className="section-title flex items-center gap-2 text-xl sm:text-2xl">

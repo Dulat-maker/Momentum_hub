@@ -54,6 +54,7 @@ import {
   type EventScorekeeper,
   PROGRAM_LABELS,
   type Program,
+  type TeamSummary,
   attendeeName,
   teamHref,
 } from "@/lib/types";
@@ -192,6 +193,7 @@ export default async function EventPage({
     { data: feedbackData },
     { data: attendanceData },
     { data: participantData },
+    { data: hubTeamData },
     { data: scorekeeperData },
     membership,
   ] = await Promise.all([
@@ -212,10 +214,15 @@ export default async function EventPage({
       supabase
         .from("event_participants")
         .select(
-          "id, event_id, team_id, name, round_1, round_2, round_3, created_at",
+          "id, event_id, team_id, name, round_1, round_2, round_3, created_at, team:teams(id, program, team_number, name, city, logo_url)",
         )
         .eq("event_id", id)
         .order("created_at", { ascending: true }),
+      supabase
+        .from("teams")
+        .select("id, program, team_number, name, city, logo_url")
+        .order("program", { ascending: true })
+        .order("team_number", { ascending: true }),
       supabase
         .from("event_scorekeepers")
         .select(
@@ -231,6 +238,7 @@ export default async function EventPage({
   const team = membership?.team ?? null;
   const scorekeepers = (scorekeeperData ??
     []) as unknown as EventScorekeeper[];
+  const hubTeams = (hubTeamData ?? []) as unknown as TeamSummary[];
 
   const attendance = (attendanceData ?? []) as unknown as EventAttendance[];
   const goingCount = attendance.length;
@@ -428,6 +436,7 @@ export default async function EventPage({
                 <ScoreboardEditor
                   eventId={event.id}
                   participants={participants}
+                  teams={hubTeams}
                 />
               </div>
             </section>
