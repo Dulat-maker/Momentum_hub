@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/empty-state";
 import { CalendarIcon, SearchIcon, UsersIcon } from "@/components/icons";
 import { SetupNotice } from "@/components/setup-notice";
 import { TeamAvatar } from "@/components/team-avatar";
+import { plural } from "@/lib/format";
 import { describeQueryError, sanitizeSearch } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
@@ -103,8 +104,8 @@ export default async function TeamsPage({
         <p className="eyebrow">Who is here</p>
         <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">Teams</h1>
         <p className="mt-2 max-w-xl text-fg-muted">
-          Every team with an account on the hub. Open a profile to see the
-          roster, the story and the events they run.
+          Every team on the hub. Open a profile to see who is on it, the
+          story, and how they have done.
         </p>
       </div>
 
@@ -238,11 +239,11 @@ export default async function TeamsPage({
               <div className="mt-4 flex gap-2 border-t border-line pt-3 text-xs">
                 <span className="chip">
                   <CalendarIcon className="size-3.5" />
-                  {countOf(team.events)} events
+                  {plural(countOf(team.events), "event")}
                 </span>
                 <span className="chip">
                   <UsersIcon className="size-3.5" />
-                  {countOf(team.members)} members
+                  {plural(countOf(team.members), "member")}
                 </span>
               </div>
             </Link>

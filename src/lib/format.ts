@@ -82,6 +82,11 @@ export function formatEventWhen(startsAt: string, endsAt: string | null): string
   return `${dayNoYearFormatter.format(start)} - ${dayFormatter.format(end)}`;
 }
 
+/** "1 event", "2 events". The site is in English, so this is enough. */
+export function plural(count: number, one: string, many = one + "s"): string {
+  return count + " " + (count === 1 ? one : many);
+}
+
 export function isPast(iso: string): boolean {
   return new Date(iso).getTime() < Date.now();
 }
