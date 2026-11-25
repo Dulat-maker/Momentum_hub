@@ -2,24 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { EventForm } from "@/components/event-form";
-import { requireTeam } from "@/lib/auth";
+import { requireMembership } from "@/lib/auth";
 import { createEventAction } from "@/lib/actions/events";
-import { canHostEvents } from "@/lib/types";
+import { canSubmitEvents } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Add an event" };
 
 export default async function NewEventPage() {
-  const team = await requireTeam("/events/new");
+  const membership = await requireMembership("/events/new");
+  const team = membership.team;
 
-  if (!canHostEvents(team)) {
+  if (!canSubmitEvents(membership.role)) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 sm:px-6">
         <div className="card p-6 text-center sm:p-8">
-          <h1 className="text-2xl font-semibold">The calendar is curated</h1>
+          <h1 className="text-2xl font-semibold">Captains put events up</h1>
           <p className="mt-3 text-fg-muted">
-            Teams are not posting their own events for now. Send what you are
-            running to Momentum and it goes on the hub under your team&apos;s
-            name.
+            Ask your captain to add it - an event goes up under the
+            team&apos;s name, so it is theirs to submit.
           </p>
           <Link href="/events" className="btn btn-outline mt-6">
             Browse events
@@ -42,7 +42,9 @@ export default async function NewEventPage() {
         <p className="eyebrow">Hosted by #{team.team_number}</p>
         <h1 className="mt-2 text-3xl font-semibold">Add an event</h1>
         <p className="mt-2 text-fg-muted">
-          It shows up on the hub right away, under your team&apos;s name.
+          It goes to Momentum first. Once they let it through it is on the
+          calendar under your team&apos;s name - your dashboard shows where
+          it stands meanwhile.
         </p>
       </div>
 
@@ -50,7 +52,7 @@ export default async function NewEventPage() {
         <EventForm
           action={createEventAction}
           teamId={team.id}
-          submitLabel="Publish event"
+          submitLabel="Send for review"
           defaultCity={team.city ?? ""}
           defaultCountry={team.country ?? "Kazakhstan"}
           defaultAudience={team.program}

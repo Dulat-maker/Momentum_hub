@@ -18,6 +18,7 @@ export const EVENT_CARD_SELECT = [
   "cover_url",
   "capacity",
   "cost",
+  "status",
   "created_at",
   "team:teams!events_team_id_fkey(id, program, team_number, name, city, logo_url)",
   "likes:event_likes(count)",
@@ -145,4 +146,22 @@ export async function hubStats(): Promise<{
     posts: posts.count ?? 0,
     cities: cities.size,
   };
+}
+
+/**
+ * How many submitted events are waiting to be let through.
+ *
+ * Only worth asking as a moderator: the select policy shows everyone else
+ * nothing but their own team's, so the number would mean something different
+ * to each person reading it.
+ */
+export async function pendingEventCount(): Promise<number> {
+  const supabase = await createClient();
+
+  const { count } = await supabase
+    .from("events")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+
+  return count ?? 0;
 }

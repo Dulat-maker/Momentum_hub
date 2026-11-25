@@ -38,10 +38,11 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import {
   type AggregateCount,
-  canHostEvents,
   CATEGORY_LABELS,
   type OutreachEntry,
   type PostRow,
+  EVENT_STATUS_LABELS,
+  type EventStatus,
   type TeamInvite,
   type TeamMember,
   countOf,
@@ -58,6 +59,8 @@ type MyEvent = {
   starts_at: string;
   ends_at: string | null;
   city: string;
+  status: EventStatus;
+  review_note: string | null;
   likes: AggregateCount;
   feedback: AggregateCount;
 };
@@ -157,7 +160,7 @@ export default async function DashboardPage({
     supabase
       .from("events")
       .select(
-        "id, title, starts_at, ends_at, city, likes:event_likes(count), feedback:event_feedback(count)",
+        "id, title, starts_at, ends_at, city, status, review_note, likes:event_likes(count), feedback:event_feedback(count)",
       )
       .eq("team_id", team.id)
       .order("starts_at", { ascending: false }),
@@ -247,7 +250,7 @@ export default async function DashboardPage({
             Public page
             <ArrowUpRightIcon className="size-4" />
           </Link>
-          {canHostEvents(team) ? (
+          {isCaptain ? (
             <Link href="/events/new" className="btn btn-primary btn-sm">
               <PlusIcon className="size-4" />
               Add event
@@ -308,7 +311,7 @@ export default async function DashboardPage({
 
         {events.length === 0 ? (
           <p className="mt-4 text-sm text-fg-dim">
-            {canHostEvents(team) ? (
+            {isCaptain ? (
               <>
                 Nothing posted yet.{" "}
                 <Link
@@ -352,6 +355,16 @@ export default async function DashboardPage({
                       {formatEventWhen(event.starts_at, event.ends_at)}
                       {event.city ? ` · ${event.city}` : ""}
                     </p>
+                    {event.status !== "approved" ? (
+                      <p
+                        className={`mt-1 text-xs ${
+                          event.status === "rejected" ? "text-red-300" : "text-warn"
+                        }`}
+                      >
+                        {EVENT_STATUS_LABELS[event.status]}
+                        {event.review_note ? ` - ${event.review_note}` : ""}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="flex items-center gap-2">

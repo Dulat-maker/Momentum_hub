@@ -81,12 +81,14 @@ export default async function HomePage() {
       supabase
         .from("events")
         .select(EVENT_CARD_SELECT)
+        .eq("status", "approved")
         .gte("starts_at", nowIso)
         .order("starts_at", { ascending: true })
         .limit(4),
       supabase
         .from("events")
         .select(EVENT_CARD_SELECT)
+        .eq("status", "approved")
         .lt("starts_at", nowIso)
         .order("starts_at", { ascending: false })
         .limit(2),

@@ -1,8 +1,9 @@
 import Link from "next/link";
 
 import { signOutAction } from "@/lib/actions/auth";
-import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
-import { canHostEvents } from "@/lib/types";
+import { getCurrentMembership, getCurrentProfile } from "@/lib/auth";
+import { pendingEventCount } from "@/lib/queries";
+import { canSubmitEvents } from "@/lib/types";
 
 import { LogOutIcon, LogoMark, PlusIcon } from "./icons";
 import { NavLink } from "./nav-link";
@@ -18,10 +19,14 @@ const LINKS = [
 export async function SiteHeader() {
   // Signed in is about the person now. They may well have no team yet -
   // that is the normal state between registering and joining one.
-  const [profile, team] = await Promise.all([
+  const [profile, membership] = await Promise.all([
     getCurrentProfile(),
-    getCurrentTeam(),
+    getCurrentMembership(),
   ]);
+
+  const team = membership?.team ?? null;
+  const canSubmit = canSubmitEvents(membership?.role);
+  const waiting = profile?.is_moderator ? await pendingEventCount() : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-xl">
@@ -39,12 +44,22 @@ export async function SiteHeader() {
               {link.label}
             </NavLink>
           ))}
+          {profile?.is_moderator ? (
+            <NavLink href="/review">
+              Review
+              {waiting > 0 ? (
+                <span className="ml-1.5 rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                  {waiting}
+                </span>
+              ) : null}
+            </NavLink>
+          ) : null}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
           {profile ? (
             <>
-              {canHostEvents(team) ? (
+              {canSubmit ? (
                 <Link
                   href="/events/new"
                   className="btn btn-outline btn-sm hidden sm:inline-flex"
@@ -103,8 +118,13 @@ export async function SiteHeader() {
             {link.label}
           </NavLink>
         ))}
-        {canHostEvents(team) ? (
+        {canSubmit ? (
           <NavLink href="/events/new">Add event</NavLink>
+        ) : null}
+        {profile?.is_moderator ? (
+          <NavLink href="/review">
+            Review{waiting > 0 ? ` ${waiting}` : null}
+          </NavLink>
         ) : null}
       </nav>
     </header>

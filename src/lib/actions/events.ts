@@ -9,12 +9,16 @@ import {
   formValues,
   success,
 } from "@/lib/action-state";
-import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
+import {
+  getCurrentMembership,
+  getCurrentProfile,
+  getCurrentTeam,
+} from "@/lib/auth";
 import { localInputToIso } from "@/lib/datetime";
 import { optionalInteger, optionalText, text } from "@/lib/form";
 import { createClient } from "@/lib/supabase/server";
 import {
-  canHostEvents,
+  canSubmitEvents,
   isEventAudience,
   isEventFormat,
   isEventKind,
@@ -23,7 +27,7 @@ import {
 const NOT_SIGNED_IN =
   "You have to be on a team to do that. Log in, then join or register one.";
 const CALENDAR_CLOSED =
-  "The calendar is curated for now. Send the event to Momentum instead.";
+  "An event goes up under the team's name, so the captain submits it.";
 
 type EventPayload = {
   title: string;
@@ -114,12 +118,16 @@ export async function createEventAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const team = await getCurrentTeam();
-  if (!team) return failure(NOT_SIGNED_IN, { values: formValues(formData) });
+  const membership = await getCurrentMembership();
+  if (!membership) {
+    return failure(NOT_SIGNED_IN, { values: formValues(formData) });
+  }
 
-  // The database refuses this too; saying so here spares the team a form
+  const team = membership.team;
+
+  // The database refuses this too; saying so here spares the captain a form
   // full of work and a policy error for an answer.
-  if (!canHostEvents(team)) {
+  if (!canSubmitEvents(membership.role)) {
     return failure(CALENDAR_CLOSED, { values: formValues(formData) });
   }
 
@@ -413,4 +421,56 @@ export async function removeAttendanceAction(
 
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/events");
+}
+
+/**
+ * A moderator letting an event onto the calendar, or turning it down.
+ *
+ * The decision rides on the button rather than a separate field, so approve
+ * and turn-down are one form and the note belongs to whichever was pressed.
+ * A trigger in the database refuses a status change from anyone else, so this
+ * is convenience rather than the actual gate.
+ */
+export async function reviewEventAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const profile = await getCurrentProfile();
+  if (!profile?.is_moderator) {
+    return failure("Only a moderator decides what goes on the calendar.");
+  }
+
+  const eventId = text(formData, "event_id");
+  const decision = text(formData, "decision");
+  const note = optionalText(formData, "review_note");
+
+  if (!eventId) return failure("Missing event id.");
+  if (decision !== "approved" && decision !== "rejected") {
+    return failure("Approve it or turn it down.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("events")
+    .update({
+      status: decision,
+      reviewed_by: profile.id,
+      reviewed_at: new Date().toISOString(),
+      review_note: note,
+    })
+    .eq("id", eventId);
+
+  if (error) return failure(error.message);
+
+  revalidatePath("/review");
+  revalidatePath("/events");
+  revalidatePath("/dashboard");
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/", "layout");
+
+  return success(
+    decision === "approved"
+      ? "On the calendar."
+      : "Turned down. The team can see why on their dashboard.",
+  );
 }

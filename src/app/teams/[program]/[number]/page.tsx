@@ -124,12 +124,14 @@ export default async function TeamProfilePage({
       .from("events")
       .select(EVENT_CARD_SELECT)
       .eq("team_id", team.id)
+      .eq("status", "approved")
       .gte("starts_at", nowIso)
       .order("starts_at", { ascending: true }),
     supabase
       .from("events")
       .select(EVENT_CARD_SELECT)
       .eq("team_id", team.id)
+      .eq("status", "approved")
       .lt("starts_at", nowIso)
       .order("starts_at", { ascending: false })
       .limit(4),

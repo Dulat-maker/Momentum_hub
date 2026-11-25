@@ -48,6 +48,8 @@ import {
   KIND_LABELS,
   countOf,
   AUDIENCE_LABELS,
+  EVENT_STATUS_LABELS,
+  type EventStatus,
   type EventAudience,
   type EventAttendance,
   type EventParticipant,
@@ -77,6 +79,8 @@ const DETAIL_SELECT = [
   "cover_url",
   "capacity",
   "cost",
+  "status",
+  "review_note",
   "created_at",
   "team:teams!events_team_id_fkey(id, program, team_number, name, city, country, logo_url, about, website, instagram, contact_email)",
   "likes:event_likes(count)",
@@ -114,6 +118,8 @@ type EventDetail = {
   cover_url: string | null;
   capacity: number | null;
   cost: string | null;
+  status: EventStatus;
+  review_note: string | null;
   created_at: string;
   team: HostTeam | null;
   likes: { count: number }[];
@@ -301,6 +307,26 @@ export default async function EventPage({
       >
         &larr; All events
       </Link>
+
+      {event.status !== "approved" ? (
+        <div
+          className={`mt-5 rounded-xl border px-4 py-3 text-sm ${
+            event.status === "rejected"
+              ? "border-red-500/30 bg-red-500/10 text-red-200"
+              : "border-warn/30 bg-warn/10 text-warn"
+          }`}
+        >
+          <p className="font-medium">{EVENT_STATUS_LABELS[event.status]}</p>
+          <p className="mt-1 opacity-90">
+            {event.status === "rejected"
+              ? "This one is not going on the calendar. Only your team and Momentum can see this page."
+              : "Momentum has not let this through yet, so only your team and Momentum can see it."}
+          </p>
+          {event.review_note ? (
+            <p className="mt-2 opacity-90">&ldquo;{event.review_note}&rdquo;</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">

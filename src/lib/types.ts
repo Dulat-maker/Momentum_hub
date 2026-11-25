@@ -58,18 +58,25 @@ export interface Team extends TeamSummary {
   created_at: string;
 }
 
+export type EventStatus = "pending" | "approved" | "rejected";
+
+export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
+  pending: "Waiting for review",
+  approved: "On the calendar",
+  rejected: "Turned down",
+};
+
 /**
- * Whether a team may put an event on the hub.
+ * Who may put an event forward.
  *
- * The calendar is curated for now, so this is false for every team until
- * `can_host_events` is set on its row:
- *
- *   update public.teams set can_host_events = true where team_number = 38157;
+ * Any captain can; it then waits for a moderator to let it through, which
+ * is what keeps the calendar worth trusting without making one team type
+ * up everybody else's events.
  */
-export function canHostEvents(
-  team: { can_host_events?: boolean } | null | undefined,
+export function canSubmitEvents(
+  role: TeamRole | null | undefined,
 ): boolean {
-  return team?.can_host_events === true;
+  return role === "captain";
 }
 
 export interface EventParticipant {
@@ -113,6 +120,8 @@ export interface OutreachEntry {
 export interface Profile {
   id: string;
   full_name: string;
+  /** Decides whether a submitted event goes on the calendar. */
+  is_moderator?: boolean;
   created_at: string;
 }
 
@@ -189,6 +198,8 @@ export interface EventRow {
   cover_url: string | null;
   capacity: number | null;
   cost: string | null;
+  status: EventStatus;
+  review_note?: string | null;
   created_at: string;
 }
 

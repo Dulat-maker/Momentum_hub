@@ -84,6 +84,7 @@ export default async function SearchPage({
       supabase
         .from("events")
         .select(EVENT_CARD_SELECT)
+        .eq("status", "approved")
         .or(
           `title.ilike.%${query}%,summary.ilike.%${query}%,description.ilike.%${query}%,city.ilike.%${query}%,venue.ilike.%${query}%`,
         )

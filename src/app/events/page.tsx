@@ -6,7 +6,7 @@ import { EventCard } from "@/components/event-card";
 import { EventFilters } from "@/components/event-filters";
 import { CalendarIcon, PlusIcon } from "@/components/icons";
 import { SetupNotice } from "@/components/setup-notice";
-import { getCurrentTeam } from "@/lib/auth";
+import { getCurrentMembership } from "@/lib/auth";
 import {
   EVENT_CARD_SELECT,
   describeQueryError,
@@ -16,7 +16,7 @@ import {
 } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
-import { canHostEvents, type EventWithTeam, isProgram } from "@/lib/types";
+import { canSubmitEvents, type EventWithTeam, isProgram } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Events",
@@ -55,7 +55,12 @@ export default async function EventsPage({
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  let query = supabase.from("events").select(EVENT_CARD_SELECT);
+  // Only what has been let through. The policy hides other teams' drafts
+  // anyway; this keeps a team's own out of the public list too.
+  let query = supabase
+    .from("events")
+    .select(EVENT_CARD_SELECT)
+    .eq("status", "approved");
 
   if (filters.when === "past") {
     query = query.lt("starts_at", nowIso).order("starts_at", { ascending: false });
@@ -81,15 +86,19 @@ export default async function EventsPage({
     );
   }
 
-  const [{ data, error }, cities, team, pastRes] = await Promise.all([
+  const [{ data, error }, cities, membership, pastRes] = await Promise.all([
     query.limit(100),
     eventCities(),
-    getCurrentTeam(),
+    getCurrentMembership(),
     supabase
       .from("events")
       .select("id", { count: "exact", head: true })
+      .eq("status", "approved")
       .lt("starts_at", nowIso),
   ]);
+
+  const team = membership?.team ?? null;
+  const canSubmit = canSubmitEvents(membership?.role);
 
   const liked = await likedEventIds(team?.id);
   const events = (data ?? []) as unknown as EventWithTeam[];
@@ -124,7 +133,7 @@ export default async function EventsPage({
           </p>
         </div>
 
-        {canHostEvents(team) ? (
+        {canSubmit ? (
           <Link href="/events/new" className="btn btn-primary">
             <PlusIcon className="size-4" />
             Add an event
@@ -161,14 +170,14 @@ export default async function EventsPage({
               ? "Try widening the filters, or look at all dates."
               : offerThePast
                 ? "Nothing on the calendar right now. What has already run is still here, results and all."
-                : canHostEvents(team)
+                : canSubmit
                   ? "Put something on the calendar - a scrimmage, a workshop, even a casual build day."
                   : "Momentum adds events as they are confirmed. Make an account and you will see them here."
           }
           actionLabel={
             offerThePast
               ? "See what has already happened"
-              : canHostEvents(team)
+              : canSubmit
                 ? "Add an event"
                 : team
                   ? undefined
@@ -177,7 +186,7 @@ export default async function EventsPage({
           actionHref={
             offerThePast
               ? "/events?when=past"
-              : canHostEvents(team)
+              : canSubmit
                 ? "/events/new"
                 : team
                   ? undefined
