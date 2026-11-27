@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { EventCard } from "@/components/event-card";
+import {
+  FtcRecord,
+  FtcRecordSkeleton,
+  FtcSponsors,
+} from "@/components/ftc-record";
 import {
   CalendarIcon,
   GlobeIcon,
@@ -353,6 +359,12 @@ export default async function TeamProfilePage({
         )}
       </section>
 
+      {team.program === "ftc" ? (
+        <Suspense fallback={<FtcRecordSkeleton />}>
+          <FtcRecord teamNumber={team.team_number} />
+        </Suspense>
+      ) : null}
+
       {results.length > 0 ? (
         <section className="mt-12">
           <h2 className="section-title flex items-center gap-2 text-xl sm:text-2xl">
@@ -535,6 +547,12 @@ export default async function TeamProfilePage({
             ))}
           </div>
         </section>
+      ) : null}
+
+      {team.program === "ftc" ? (
+        <Suspense fallback={null}>
+          <FtcSponsors teamNumber={team.team_number} />
+        </Suspense>
       ) : null}
     </div>
   );
