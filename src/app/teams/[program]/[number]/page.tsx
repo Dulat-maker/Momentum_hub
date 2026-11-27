@@ -24,6 +24,7 @@ import {
 import { SetupNotice } from "@/components/setup-notice";
 import { rankParticipants } from "@/components/leaderboard";
 import { TeamAvatar } from "@/components/team-avatar";
+import { TeamLanyardRail } from "@/components/team-lanyard-rail";
 import { getCurrentTeam } from "@/lib/auth";
 import {
   externalHref,
@@ -45,6 +46,7 @@ import {
   type Program,
   type Team,
   type TeamMember,
+  memberName,
   bestRound,
   isProgram,
 } from "@/lib/types";
@@ -121,7 +123,7 @@ export default async function TeamProfilePage({
     supabase
       .from("team_members")
       .select(
-        "team_id, profile_id, role, title, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
+        "id, team_id, profile_id, role, title, full_name, bio, photo_url, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
       )
       .eq("team_id", team.id)
       .order("sort_order", { ascending: true })
@@ -330,31 +332,20 @@ export default async function TeamProfilePage({
 
         {members.length === 0 ? (
           <p className="mt-4 text-sm text-fg-dim">
-            Nobody has joined this team on the hub yet.
+            This team has not put its roster up yet.
           </p>
         ) : (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {members.map((member) => (
-              <div
-                key={member.profile_id}
-                className="card flex items-center gap-3 p-4"
-              >
-                <TeamAvatar
-                  name={member.profile?.full_name ?? "Someone"}
-                  size="md"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">
-                    {member.profile?.full_name ?? "Someone"}
-                  </p>
-                  <p className="truncate text-xs text-fg-dim">
-                    {member.role === "captain"
-                      ? "Captain"
-                      : member.title || "Team member"}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="mt-6">
+            <TeamLanyardRail
+              people={members.map((member) => ({
+                id: member.id,
+                name: memberName(member),
+                role: member.title,
+                photoUrl: member.photo_url,
+                bio: member.bio,
+                isCaptain: member.role === "captain",
+              }))}
+            />
           </div>
         )}
       </section>

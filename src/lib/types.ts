@@ -132,14 +132,25 @@ export type TeamRole = "captain" | "member";
  * people listed here are the people who can act for the team.
  */
 export interface TeamMember {
+  id: string;
   team_id: string;
-  profile_id: string;
+  /** Null for somebody the captain wrote down who has no account here. */
+  profile_id: string | null;
   role: TeamRole;
   /** Free text shown on the roster - "Programmer", "Driver", "Mentor". */
   title: string | null;
   sort_order: number;
   joined_at: string;
+  /** Used when there is no profile behind the row. */
+  full_name: string | null;
+  bio: string | null;
+  photo_url: string | null;
   profile?: Profile | null;
+}
+
+/** What to call somebody on the roster, account or not. */
+export function memberName(member: TeamMember): string {
+  return member.profile?.full_name ?? member.full_name ?? "Someone";
 }
 
 export type InviteStatus = "pending" | "accepted" | "declined";

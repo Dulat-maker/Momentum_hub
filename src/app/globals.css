@@ -166,4 +166,27 @@
   .logo-blend {
     mix-blend-mode: screen;
   }
+
+  /* A badge hangs from its strap, so it turns about the top, not the middle. */
+  .lanyard-hang {
+    transform: rotate(var(--hang, 0deg));
+    transform-origin: top center;
+    transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Only where there is a real cursor. On a touch screen the hover state
+     sticks after the tap and the badge stays lifted and crooked - the same
+     trap the magnetic buttons fell into. */
+  @media (hover: hover) and (pointer: fine) {
+    .lanyard-hang:hover {
+      transform: rotate(calc(var(--hang, 0deg) * -0.35)) translateY(-5px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lanyard-hang,
+    .lanyard-face {
+      transition: none;
+    }
+  }
 }

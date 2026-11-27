@@ -14,6 +14,7 @@ import {
 } from "@/components/icons";
 import { InviteCard } from "@/components/invite-card";
 import { InviteForm } from "@/components/invite-form";
+import { RosterForm } from "@/components/roster-form";
 import { OutreachForm } from "@/components/outreach-form";
 import { IconSubmitButton, SubmitButton } from "@/components/submit-button";
 import { TeamAvatar } from "@/components/team-avatar";
@@ -25,6 +26,7 @@ import {
   cancelInviteAction,
   leaveTeamAction,
   removeMemberAction,
+  removeRosterPersonAction,
 } from "@/lib/actions/teams";
 import { getCurrentMembership, getCurrentUser, requireProfile } from "@/lib/auth";
 import {
@@ -45,6 +47,7 @@ import {
   type EventStatus,
   type TeamInvite,
   type TeamMember,
+  memberName,
   countOf,
   PROGRAM_LABELS,
   type Program,
@@ -153,7 +156,7 @@ export default async function DashboardPage({
     supabase
       .from("team_members")
       .select(
-        "team_id, profile_id, role, title, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
+        "id, team_id, profile_id, role, title, full_name, bio, photo_url, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
       )
       .eq("team_id", team.id)
       .order("sort_order", { ascending: true }),
@@ -463,7 +466,28 @@ export default async function DashboardPage({
         </p>
 
         <div className="card mt-5 p-5">
-          {isCaptain ? <InviteForm /> : null}
+          {isCaptain ? (
+            <div className="space-y-6">
+              <InviteForm />
+              <div className="border-t border-line pt-5">
+                <p className="text-xs tracking-wider text-fg-dim uppercase">
+                  Or write somebody in
+                </p>
+                <p className="mt-1.5 mb-4 text-sm text-fg-muted">
+                  For the people who will not be making an account. They
+                  show on the team page and can do nothing here.
+                </p>
+                <RosterForm
+                  teamId={team.id}
+                  nextSortOrder={
+                    members.length > 0
+                      ? Math.max(...members.map((m) => m.sort_order)) + 1
+                      : 0
+                  }
+                />
+              </div>
+            </div>
+          ) : null}
 
           {members.length > 0 ? (
             <ul
@@ -473,19 +497,25 @@ export default async function DashboardPage({
             >
               {members.map((member) => (
                 <li
-                  key={member.profile_id}
+                  key={member.id}
                   className="flex items-center gap-3 py-3 text-sm"
                 >
                   <TeamAvatar
-                    name={member.profile?.full_name ?? "Someone"}
+                    name={memberName(member)}
+                    logoUrl={member.photo_url}
                     size="sm"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">
-                      {member.profile?.full_name ?? "Someone"}
+                      {memberName(member)}
                       {member.profile_id === profile.id ? (
                         <span className="ml-2 text-xs font-normal text-fg-dim">
                           you
+                        </span>
+                      ) : null}
+                      {!member.profile_id ? (
+                        <span className="ml-2 text-xs font-normal text-fg-dim">
+                          no account
                         </span>
                       ) : null}
                     </p>
@@ -496,15 +526,24 @@ export default async function DashboardPage({
                     </p>
                   </div>
 
-                  {isCaptain && member.role !== "captain" ? (
+                  {isCaptain && !member.profile_id ? (
+                    <form action={removeRosterPersonAction}>
+                      <input type="hidden" name="member_id" value={member.id} />
+                      <IconSubmitButton
+                        title={`Take ${memberName(member)} off the roster`}
+                      >
+                        <TrashIcon className="size-4" />
+                      </IconSubmitButton>
+                    </form>
+                  ) : isCaptain && member.role !== "captain" ? (
                     <form action={removeMemberAction}>
                       <input
                         type="hidden"
                         name="profile_id"
-                        value={member.profile_id}
+                        value={member.profile_id ?? ""}
                       />
                       <IconSubmitButton
-                        title={`Remove ${member.profile?.full_name ?? "this member"}`}
+                        title={`Remove ${memberName(member)}`}
                       >
                         <TrashIcon className="size-4" />
                       </IconSubmitButton>

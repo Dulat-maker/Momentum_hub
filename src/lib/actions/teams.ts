@@ -327,3 +327,72 @@ export async function setMemberTitleAction(
 
   return { error: null, success: "Saved." };
 }
+
+/**
+ * Somebody on the team who has no account here.
+ *
+ * Most of a team never signs up - they have no reason to - and a roster that
+ * shows only the people who did makes a team of fourteen look like a team of
+ * one. These rows carry a face and a name and no permission at all.
+ */
+export async function addRosterPersonAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const membership = await getCurrentMembership();
+  if (!membership) {
+    return failure(NOT_SIGNED_IN, { values: formValues(formData) });
+  }
+  if (membership.role !== "captain") {
+    return failure(NOT_THE_CAPTAIN, { values: formValues(formData) });
+  }
+
+  const fullName = text(formData, "full_name");
+  const keep = { values: formValues(formData) };
+
+  if (fullName.length < 2) {
+    return failure("Enter their name.", { ...keep, field: "full_name" });
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("team_members").insert({
+    team_id: membership.team.id,
+    profile_id: null,
+    role: "member",
+    title: optionalText(formData, "title"),
+    full_name: fullName,
+    bio: optionalText(formData, "bio"),
+    photo_url: optionalText(formData, "photo_url"),
+    sort_order: optionalInteger(formData, "sort_order") ?? 0,
+  });
+
+  if (error) return failure(error.message, keep);
+
+  revalidatePath("/dashboard");
+  revalidatePath(teamHref(membership.team));
+
+  return { error: null, success: fullName + " is on the roster." };
+}
+
+/** Removes a written-in person. Accounts leave through removeMemberAction. */
+export async function removeRosterPersonAction(
+  formData: FormData,
+): Promise<void> {
+  const membership = await getCurrentMembership();
+  if (!membership || membership.role !== "captain") return;
+
+  const memberId = text(formData, "member_id");
+  if (!memberId) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("team_members")
+    .delete()
+    .eq("id", memberId)
+    .eq("team_id", membership.team.id)
+    // Guards against this taking somebody's access away by accident.
+    .is("profile_id", null);
+
+  revalidatePath("/dashboard");
+  revalidatePath(teamHref(membership.team));
+}
