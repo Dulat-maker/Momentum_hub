@@ -37,6 +37,12 @@ import {
   prettyHostname,
   timeAgo,
 } from "@/lib/format";
+import {
+  asMembers,
+  hasEventReview,
+  hasRosterPeople,
+  memberSelect,
+} from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import {
   type AggregateCount,
@@ -46,7 +52,6 @@ import {
   EVENT_STATUS_LABELS,
   type EventStatus,
   type TeamInvite,
-  type TeamMember,
   memberName,
   countOf,
   PROGRAM_LABELS,
@@ -91,6 +96,10 @@ export default async function DashboardPage({
   const membership = await getCurrentMembership();
 
   const supabase = await createClient();
+  const [reviewReady, rosterReady] = await Promise.all([
+    hasEventReview(),
+    hasRosterPeople(),
+  ]);
 
   // Signed in but on no team. That is the normal state between creating an
   // account and either registering a team or taking up an invitation, so it
@@ -155,15 +164,15 @@ export default async function DashboardPage({
     await Promise.all([
     supabase
       .from("team_members")
-      .select(
-        "id, team_id, profile_id, role, title, full_name, bio, photo_url, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
-      )
+      .select(memberSelect(rosterReady))
       .eq("team_id", team.id)
       .order("sort_order", { ascending: true }),
     supabase
       .from("events")
       .select(
-        "id, title, starts_at, ends_at, city, status, review_note, likes:event_likes(count), feedback:event_feedback(count)",
+        reviewReady
+          ? "id, title, starts_at, ends_at, city, status, review_note, likes:event_likes(count), feedback:event_feedback(count)"
+          : "id, title, starts_at, ends_at, city, likes:event_likes(count), feedback:event_feedback(count)",
       )
       .eq("team_id", team.id)
       .order("starts_at", { ascending: false }),
@@ -195,7 +204,7 @@ export default async function DashboardPage({
       .order("created_at", { ascending: false }),
   ]);
 
-  const members = (memberRes.data ?? []) as unknown as TeamMember[];
+  const members = asMembers(memberRes.data);
   const pendingInvites = (inviteRes.data ?? []) as unknown as TeamInvite[];
   const outreach = (outreachRes.data ?? []) as unknown as OutreachEntry[];
 
@@ -207,7 +216,15 @@ export default async function DashboardPage({
     (total, entry) => total + (entry.people_reached ?? 0),
     0,
   );
-  const events = (eventRes.data ?? []) as unknown as MyEvent[];
+  // Without the review migration nothing has a status, and everything
+  // that exists is on the calendar - which is exactly what it was.
+  const events = ((eventRes.data ?? []) as unknown as MyEvent[]).map(
+    (event) => ({
+      ...event,
+      status: event.status ?? "approved",
+      review_note: event.review_note ?? null,
+    }),
+  );
   const posts = (postRes.data ?? []) as unknown as MyPost[];
 
   // Only what is still ahead, soonest first - the past belongs on the event
@@ -477,14 +494,21 @@ export default async function DashboardPage({
                   For the people who will not be making an account. They
                   show on the team page and can do nothing here.
                 </p>
-                <RosterForm
-                  teamId={team.id}
-                  nextSortOrder={
-                    members.length > 0
-                      ? Math.max(...members.map((m) => m.sort_order)) + 1
-                      : 0
-                  }
-                />
+                {rosterReady ? (
+                  <RosterForm
+                    teamId={team.id}
+                    nextSortOrder={
+                      members.length > 0
+                        ? Math.max(...members.map((m) => m.sort_order)) + 1
+                        : 0
+                    }
+                  />
+                ) : (
+                  <p className="text-sm text-warn">
+                    Waiting on a database migration -
+                    2026-11-27-roster-people.sql.
+                  </p>
+                )}
               </div>
             </div>
           ) : null}

@@ -1,6 +1,9 @@
-import { createClient } from "./supabase/server";
+import { cache } from "react";
 
-export const EVENT_CARD_SELECT = [
+import { createClient } from "./supabase/server";
+import type { TeamMember, TeamRole } from "./types";
+
+const EVENT_CARD_FIELDS = [
   "id",
   "team_id",
   "title",
@@ -18,13 +21,25 @@ export const EVENT_CARD_SELECT = [
   "cover_url",
   "capacity",
   "cost",
-  "status",
   "created_at",
   "team:teams!events_team_id_fkey(id, program, team_number, name, city, logo_url)",
   "likes:event_likes(count)",
   "feedback:event_feedback(count)",
   "attendance:event_attendance(count)",
-].join(", ");
+];
+
+/**
+ * What to ask for, given what the database has.
+ *
+ * A column the migration has not added yet is not a missing feature, it
+ * is a syntax error as far as PostgREST is concerned, and it takes the
+ * whole query down with it. So the query is built to match.
+ */
+export function eventCardSelect(withReview: boolean): string {
+  return (
+    withReview ? [...EVENT_CARD_FIELDS, "status"] : EVENT_CARD_FIELDS
+  ).join(", ");
+}
 
 export const POST_CARD_SELECT = [
   "id",
@@ -164,4 +179,90 @@ export async function pendingEventCount(): Promise<number> {
     .eq("status", "pending");
 
   return count ?? 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * What this database can do yet.
+ *
+ * A migration lands when somebody runs it, which is not the moment the
+ * code that needs it is deployed. In between, a page that assumes the new
+ * shape does not degrade - it fails outright and takes the calendar with
+ * it. So the shape is asked about rather than assumed.
+ *
+ * Only the yes is remembered: a database can gain a column while the
+ * server is running, and will not lose one.
+ * ------------------------------------------------------------------ */
+
+let eventReviewSeen = false;
+let rosterPeopleSeen = false;
+
+/** Whether events carry a review status yet. */
+export const hasEventReview = cache(async (): Promise<boolean> => {
+  if (eventReviewSeen) return true;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("events").select("status").limit(1);
+
+  if (!error) eventReviewSeen = true;
+  return eventReviewSeen;
+});
+
+/** Whether the roster can hold people who have no account. */
+export const hasRosterPeople = cache(async (): Promise<boolean> => {
+  if (rosterPeopleSeen) return true;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("team_members")
+    .select("id, full_name")
+    .limit(1);
+
+  if (!error) rosterPeopleSeen = true;
+  return rosterPeopleSeen;
+});
+
+const MEMBER_FIELDS = [
+  "team_id",
+  "profile_id",
+  "role",
+  "title",
+  "sort_order",
+  "joined_at",
+  "profile:profiles(id, full_name, created_at)",
+];
+
+const MEMBER_PEOPLE_FIELDS = ["id", "full_name", "bio", "photo_url"];
+
+export function memberSelect(withPeople: boolean): string {
+  return (
+    withPeople ? [...MEMBER_PEOPLE_FIELDS, ...MEMBER_FIELDS] : MEMBER_FIELDS
+  ).join(", ");
+}
+
+/**
+ * Rows in, whole members out.
+ *
+ * Before the roster migration there is no id column, so one is made from the
+ * profile - the pair is unique either way, and the page only needs something
+ * stable to key on.
+ */
+export function asMembers(rows: unknown[] | null | undefined): TeamMember[] {
+  return (rows ?? []).map((row) => {
+    const member = row as Record<string, unknown>;
+    const profileId = (member.profile_id as string | null) ?? null;
+
+    return {
+      id: (member.id as string | undefined) ?? `profile-${profileId}`,
+      team_id: member.team_id as string,
+      profile_id: profileId,
+      role: ((member.role as TeamRole | undefined) ?? "member") as TeamRole,
+      title: (member.title as string | null) ?? null,
+      sort_order: (member.sort_order as number | undefined) ?? 0,
+      joined_at: (member.joined_at as string | undefined) ?? "",
+      full_name: (member.full_name as string | null) ?? null,
+      bio: (member.bio as string | null) ?? null,
+      photo_url: (member.photo_url as string | null) ?? null,
+      profile: (member.profile as TeamMember["profile"]) ?? null,
+    };
+  });
 }

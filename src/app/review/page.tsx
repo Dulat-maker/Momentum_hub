@@ -6,7 +6,7 @@ import { CalendarIcon } from "@/components/icons";
 import { ReviewCard } from "@/components/review-card";
 import { SetupNotice } from "@/components/setup-notice";
 import { requireProfile } from "@/lib/auth";
-import { EVENT_CARD_SELECT } from "@/lib/queries";
+import { eventCardSelect, hasEventReview } from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { EventWithTeam } from "@/lib/types";
@@ -44,11 +44,31 @@ export default async function ReviewPage() {
     );
   }
 
+  // Without the review migration there is no queue, and an empty page would
+  // read as "nothing waiting" rather than "this is not switched on yet".
+  if (!(await hasEventReview())) {
+    return (
+      <div className="mx-auto w-full max-w-xl px-4 py-16 sm:px-6">
+        <div className="card p-6 sm:p-8">
+          <h1 className="text-2xl font-semibold">Not switched on yet</h1>
+          <p className="mt-3 text-fg-muted">
+            Reviewing events needs a database migration that has not been run:
+            supabase/migrations/2026-11-25-event-review.sql. Until it is,
+            captains cannot submit events and nothing arrives here.
+          </p>
+          <Link href="/events" className="btn btn-outline mt-6">
+            Browse events
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("events")
-    .select(EVENT_CARD_SELECT)
+    .select(eventCardSelect(true))
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 

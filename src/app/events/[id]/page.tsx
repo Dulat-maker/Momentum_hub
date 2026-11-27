@@ -41,6 +41,7 @@ import {
   timeAgo,
 } from "@/lib/format";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { hasEventReview } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import {
   type EventFeedback,
@@ -61,7 +62,7 @@ import {
   teamHref,
 } from "@/lib/types";
 
-const DETAIL_SELECT = [
+const DETAIL_FIELDS = [
   "id",
   "team_id",
   "title",
@@ -79,12 +80,10 @@ const DETAIL_SELECT = [
   "cover_url",
   "capacity",
   "cost",
-  "status",
-  "review_note",
   "created_at",
   "team:teams!events_team_id_fkey(id, program, team_number, name, city, country, logo_url, about, website, instagram, contact_email)",
   "likes:event_likes(count)",
-].join(", ");
+];
 
 type HostTeam = {
   id: string;
@@ -127,13 +126,29 @@ type EventDetail = {
 
 async function loadEvent(id: string): Promise<EventDetail | null> {
   const supabase = await createClient();
+  const reviewReady = await hasEventReview();
+
+  const select = (
+    reviewReady ? [...DETAIL_FIELDS, "status", "review_note"] : DETAIL_FIELDS
+  ).join(", ");
+
   const { data } = await supabase
     .from("events")
-    .select(DETAIL_SELECT)
+    .select(select)
     .eq("id", id)
     .maybeSingle();
 
-  return (data as unknown as EventDetail | null) ?? null;
+  if (!data) return null;
+
+  // Before the review migration every event that exists is simply listed,
+  // which is what it was before any of this.
+  const event = data as unknown as EventDetail;
+
+  return {
+    ...event,
+    status: event.status ?? "approved",
+    review_note: event.review_note ?? null,
+  };
 }
 
 export async function generateMetadata({

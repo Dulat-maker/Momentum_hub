@@ -18,7 +18,8 @@ import { SetupNotice } from "@/components/setup-notice";
 import { Podium } from "@/components/podium";
 import { getCurrentProfile, getCurrentTeam } from "@/lib/auth";
 import {
-  EVENT_CARD_SELECT,
+  eventCardSelect,
+  hasEventReview,
   POST_CARD_SELECT,
   hubStats,
   likedEventIds,
@@ -76,19 +77,26 @@ export default async function HomePage() {
   if (configured) {
     const supabase = await createClient();
     const nowIso = new Date().toISOString();
+    const reviewReady = await hasEventReview();
 
     const [eventRes, pastRes, postRes, profile, team] = await Promise.all([
-      supabase
-        .from("events")
-        .select(EVENT_CARD_SELECT)
-        .eq("status", "approved")
+      (reviewReady
+        ? supabase
+            .from("events")
+            .select(eventCardSelect(true))
+            .eq("status", "approved")
+        : supabase.from("events").select(eventCardSelect(false))
+      )
         .gte("starts_at", nowIso)
         .order("starts_at", { ascending: true })
         .limit(4),
-      supabase
-        .from("events")
-        .select(EVENT_CARD_SELECT)
-        .eq("status", "approved")
+      (reviewReady
+        ? supabase
+            .from("events")
+            .select(eventCardSelect(true))
+            .eq("status", "approved")
+        : supabase.from("events").select(eventCardSelect(false))
+      )
         .lt("starts_at", nowIso)
         .order("starts_at", { ascending: false })
         .limit(2),

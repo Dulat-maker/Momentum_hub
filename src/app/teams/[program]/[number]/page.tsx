@@ -32,7 +32,14 @@ import {
   prettyHostname,
   timeAgo,
 } from "@/lib/format";
-import { EVENT_CARD_SELECT, likedEventIds } from "@/lib/queries";
+import {
+  asMembers,
+  eventCardSelect,
+  hasEventReview,
+  hasRosterPeople,
+  likedEventIds,
+  memberSelect,
+} from "@/lib/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -45,7 +52,6 @@ import {
   type PostRow,
   type Program,
   type Team,
-  type TeamMember,
   memberName,
   bestRound,
   isProgram,
@@ -117,29 +123,37 @@ export default async function TeamProfilePage({
 
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
+  const [reviewReady, rosterReady] = await Promise.all([
+    hasEventReview(),
+    hasRosterPeople(),
+  ]);
 
   const [memberRes, upcomingRes, pastRes, postRes, outreachRes, viewer] =
     await Promise.all([
     supabase
       .from("team_members")
-      .select(
-        "id, team_id, profile_id, role, title, full_name, bio, photo_url, sort_order, joined_at, profile:profiles(id, full_name, created_at)",
-      )
+      .select(memberSelect(rosterReady))
       .eq("team_id", team.id)
       .order("sort_order", { ascending: true })
       .order("joined_at", { ascending: true }),
-    supabase
-      .from("events")
-      .select(EVENT_CARD_SELECT)
+    (reviewReady
+      ? supabase
+          .from("events")
+          .select(eventCardSelect(true))
+          .eq("status", "approved")
+      : supabase.from("events").select(eventCardSelect(false))
+    )
       .eq("team_id", team.id)
-      .eq("status", "approved")
       .gte("starts_at", nowIso)
       .order("starts_at", { ascending: true }),
-    supabase
-      .from("events")
-      .select(EVENT_CARD_SELECT)
+    (reviewReady
+      ? supabase
+          .from("events")
+          .select(eventCardSelect(true))
+          .eq("status", "approved")
+      : supabase.from("events").select(eventCardSelect(false))
+    )
       .eq("team_id", team.id)
-      .eq("status", "approved")
       .lt("starts_at", nowIso)
       .order("starts_at", { ascending: false })
       .limit(4),
@@ -159,7 +173,7 @@ export default async function TeamProfilePage({
     getCurrentTeam(),
   ]);
 
-  const members = (memberRes.data ?? []) as unknown as TeamMember[];
+  const members = asMembers(memberRes.data);
 
   const { data: ownScoreRows } = await supabase
     .from("event_participants")

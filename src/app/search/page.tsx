@@ -10,7 +10,8 @@ import { TeamAvatar } from "@/components/team-avatar";
 import { TeamTag } from "@/components/team-tag";
 import { getCurrentTeam } from "@/lib/auth";
 import {
-  EVENT_CARD_SELECT,
+  eventCardSelect,
+  hasEventReview,
   POST_CARD_SELECT,
   describeQueryError,
   likedEventIds,
@@ -80,11 +81,16 @@ export default async function SearchPage({
       teamFilters.push(`team_number.eq.${numeric}`);
     }
 
+    const reviewReady = await hasEventReview();
+
     const [eventRes, teamRes, postRes, team] = await Promise.all([
-      supabase
-        .from("events")
-        .select(EVENT_CARD_SELECT)
-        .eq("status", "approved")
+      (reviewReady
+        ? supabase
+            .from("events")
+            .select(eventCardSelect(true))
+            .eq("status", "approved")
+        : supabase.from("events").select(eventCardSelect(false))
+      )
         .or(
           `title.ilike.%${query}%,summary.ilike.%${query}%,description.ilike.%${query}%,city.ilike.%${query}%,venue.ilike.%${query}%`,
         )

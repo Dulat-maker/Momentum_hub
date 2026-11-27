@@ -8,7 +8,8 @@ import { CalendarIcon, PlusIcon } from "@/components/icons";
 import { SetupNotice } from "@/components/setup-notice";
 import { getCurrentMembership } from "@/lib/auth";
 import {
-  EVENT_CARD_SELECT,
+  eventCardSelect,
+  hasEventReview,
   describeQueryError,
   eventCities,
   likedEventIds,
@@ -55,12 +56,13 @@ export default async function EventsPage({
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
+  const reviewReady = await hasEventReview();
+
   // Only what has been let through. The policy hides other teams' drafts
-  // anyway; this keeps a team's own out of the public list too.
-  let query = supabase
-    .from("events")
-    .select(EVENT_CARD_SELECT)
-    .eq("status", "approved");
+  // anyway; this keeps a team's own out of the public list too. Before the
+  // review migration there is nothing to filter on and nothing to hide.
+  let query = supabase.from("events").select(eventCardSelect(reviewReady));
+  if (reviewReady) query = query.eq("status", "approved");
 
   if (filters.when === "past") {
     query = query.lt("starts_at", nowIso).order("starts_at", { ascending: false });
@@ -90,11 +92,15 @@ export default async function EventsPage({
     query.limit(100),
     eventCities(),
     getCurrentMembership(),
-    supabase
-      .from("events")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "approved")
-      .lt("starts_at", nowIso),
+    (reviewReady
+      ? supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "approved")
+      : supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+    ).lt("starts_at", nowIso),
   ]);
 
   const team = membership?.team ?? null;

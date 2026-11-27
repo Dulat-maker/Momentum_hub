@@ -10,6 +10,7 @@ import {
   getCurrentUser,
 } from "@/lib/auth";
 import { optionalInteger, optionalText, text } from "@/lib/form";
+import { hasRosterPeople } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 import { PROGRAM_LABELS, isProgram, teamHref } from "@/lib/types";
 
@@ -349,6 +350,13 @@ export async function addRosterPersonAction(
 
   const fullName = text(formData, "full_name");
   const keep = { values: formValues(formData) };
+
+  if (!(await hasRosterPeople())) {
+    return failure(
+      "The roster cannot hold people without accounts until the migration 2026-11-27-roster-people.sql has been run.",
+      keep,
+    );
+  }
 
   if (fullName.length < 2) {
     return failure("Enter their name.", { ...keep, field: "full_name" });
