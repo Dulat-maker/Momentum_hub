@@ -1,23 +1,30 @@
 -- ===========================================================================
 -- Events go through review before they appear.
 --
--- Run after the earlier migrations. Safe to run again.
+-- RUN THIS ONE STEP AT A TIME. The Supabase SQL editor runs everything you
+-- paste as a single transaction, so one error anywhere rolls back all of it
+-- and leaves no trace of which statement was at fault. Pasted step by step,
+-- whatever fails says so while everything before it stays.
 --
--- The calendar was closed: one flagged team posted, everybody else sent their
--- event to Momentum by other means. Now any captain can put one up, and it
--- waits for a moderator to let it through. That keeps the calendar something
--- teams can trust without making Momentum the typist.
+-- Every step is safe to run twice.
 --
--- The gate is in the database, not the pages: the select policy hides what is
--- not approved, and a trigger stops anyone but a moderator moving an event
--- between states. A page that forgets to filter cannot leak a draft.
+-- What it does: the calendar was closed, so one flagged team posted and
+-- everybody else asked Momentum to type their event in. After this, any
+-- captain can put one up and it waits for a moderator. The gate is in the
+-- database - the select policy hides what is not approved, and a trigger
+-- refuses a status change from anyone else - so a page that forgets to
+-- filter cannot leak a draft and a crafted request cannot approve itself.
 -- ===========================================================================
 
+
+-- STEP 1 ---------------------------------------------------- the states --
 do $enum$ begin
   create type public.event_status as enum ('pending', 'approved', 'rejected');
 exception when duplicate_object then null;
 end $enum$;
 
+
+-- STEP 2 --------------------------------------------------- the columns --
 alter table public.events
   add column if not exists status public.event_status not null default 'pending';
 
@@ -28,21 +35,25 @@ alter table public.events
 alter table public.events
   add column if not exists reviewed_at timestamptz;
 
--- Why it was turned down, so the team can fix it instead of guessing.
 alter table public.events
   add column if not exists review_note text;
 
 create index if not exists events_status_idx on public.events (status, starts_at);
 
--- Everything that was already on the hub was there because somebody meant it
--- to be. This only catches the rows that predate the column.
-update public.events set status = 'approved'
- where status = 'pending' and reviewed_at is null and created_at < now();
 
--- ------------------------------------------------------------ moderator ----
+-- STEP 3 ------------------------------------- what was already on the hub --
+-- It is there because somebody meant it to be.
+update public.events
+   set status = 'approved'
+ where status = 'pending' and reviewed_at is null;
+
+
+-- STEP 4 ------------------------------------------------- the moderators --
 alter table public.profiles
   add column if not exists is_moderator boolean not null default false;
 
+
+-- STEP 5 ------------------------------------------------------------------
 create or replace function public.is_moderator()
 returns boolean language sql stable security definer set search_path = public
 as $fn$
@@ -52,8 +63,10 @@ as $fn$
   );
 $fn$;
 
--- Momentum's captain reviews. Run the same update for anybody else who
--- should, or set it to false to take the job away.
+
+-- STEP 6 ---------------------------------------------- who does the job --
+-- Momentum's captain. Run it again for anybody else who should, or set it
+-- to false to take the job away.
 update public.profiles p
    set is_moderator = true
  where exists (
@@ -66,15 +79,14 @@ update public.profiles p
       and t.team_number = 38157
  );
 
--- ------------------------------------------------------------- the gate ----
--- Who may submit is one question; what state the submission lands in is
--- another, and it is not up to the submitter.
+
+-- STEP 7 ------------------------------------- where a submission lands --
+-- Who may submit is one question; what state it lands in is another, and
+-- that one is not up to the submitter.
 create or replace function public.set_event_status()
 returns trigger language plpgsql security definer set search_path = public
 as $fn$
 begin
-  -- A moderator putting one up has already made the decision. The column has
-  -- a default, so there is nothing to coalesce here: it is set outright.
   if public.is_moderator() then
     new.status      := 'approved';
     new.reviewed_by := auth.uid();
@@ -82,7 +94,6 @@ begin
     return new;
   end if;
 
-  -- A team that publishes without review keeps doing so; everyone else waits.
   if exists (
     select 1 from public.teams t
      where t.id = new.team_id and t.can_host_events
@@ -100,11 +111,15 @@ begin
 end;
 $fn$;
 
+
+-- STEP 8 ------------------------------------------------------------------
 drop trigger if exists on_event_submitted on public.events;
 create trigger on_event_submitted
   before insert on public.events
   for each row execute function public.set_event_status();
 
+
+-- STEP 9 ------------------------------------------ nobody lists their own --
 create or replace function public.guard_event_status()
 returns trigger language plpgsql security definer set search_path = public
 as $fn$
@@ -118,13 +133,16 @@ begin
 end;
 $fn$;
 
+
+-- STEP 10 -----------------------------------------------------------------
 drop trigger if exists on_event_status_change on public.events;
 create trigger on_event_status_change
   before update on public.events
   for each row execute function public.guard_event_status();
 
--- ------------------------------------------------------------- policies ----
--- An event nobody approved is visible to the team that wrote it and to the
+
+-- STEP 11 ------------------------------------------------- who sees what --
+-- An unapproved event is visible to the team that wrote it and to the
 -- people reviewing it, and to nobody else.
 drop policy if exists "events readable by everyone" on public.events;
 create policy "events readable by everyone"
@@ -135,13 +153,16 @@ create policy "events readable by everyone"
     or public.is_moderator()
   );
 
--- Any captain can put one forward now. The trigger decides where it lands.
+
+-- STEP 12 ------------------------------------------------ who may submit --
 drop policy if exists "host adds events" on public.events;
 drop policy if exists "captain submits an event" on public.events;
 create policy "captain submits an event"
   on public.events for insert
   with check (public.is_team_captain(team_id) or public.is_moderator());
 
+
+-- STEP 13 ------------------------------------------------- who may edit --
 drop policy if exists "team updates own events" on public.events;
 create policy "team updates own events"
   on public.events for update
@@ -158,6 +179,8 @@ create policy "team deletes own events"
   on public.events for delete
   using (public.is_team_member(team_id) or public.is_moderator());
 
+
+-- STEP 14 ------------------------------------------------------- check it --
 select
   (select count(*) from public.events where status = 'approved') as approved,
   (select count(*) from public.events where status = 'pending')  as pending,
